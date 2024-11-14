@@ -9,6 +9,8 @@
 #include <mutex>
 #include <algorithm>
 #include <type_traits>
+#include <functional>
+#include <typeindex>
 
 #include <EventBase_t.h>
 
@@ -39,9 +41,9 @@ namespace UltReality::Utilities
 		  'EnumType' (enum class) representing specific event types.
 		
 		Constructor Parameters:
-		- 'batchSize': Defines the number of events to process per dispatch batch from both
-		   synchronized and unsynchronized maps (in effect the total is tice this number);
-		   defaults to 60 (120 total per batch at maximum)
+		- 'batchSize': Defines the number of events to process per dispatch batch. This number is split up
+		  between the two internal queues (unsynchronized and synchronized). If one queue has less than 
+		  its share of events loaded, the other queue will get that allotment for that batch dispatch.
 		
 		Features:
 		- Queues events for either synchronous or asynchronous processing.
@@ -95,6 +97,12 @@ namespace UltReality::Utilities
 	concept CEventDispatcherCompatible = CEventBase<T>;
 
 	/// <summary>
+	/// Concept to enforce that T is derived from the BaseType, which is compatible with EventDispatcher
+	/// </summary>
+	template<typename BaseType, typename T>
+	concept CDerivedEvent = CEventBase<BaseType> && std::is_base_of_v<BaseType, T>;
+
+	/// <summary>
 	/// A class that handles the dispatching of event objects to subscribed listeners
 	/// </summary>
 	/// <typeparam name="...Events">A variadic template parameter pack of types that satisfy the <seealso cref="UltReality.Utilities.CEventType"/> concept. These are the event that manager supports</typeparam>
@@ -102,34 +110,62 @@ namespace UltReality::Utilities
 	class EventDispatcher
 	{
 	public:
-		using FreeFunction = void(*)(const EventTypeBase&);
-
-		template<typename T>
-		using MemberFunction = void(T::*)(const EventTypeBase&);
-
 		using EnumType = typename EventTypeBase::EnumType;
 
 	private:
-		/// <summary>
-		/// A wrapper around function pointers and utility operators to invoke as a functor
-		/// </summary>
-		struct Delegate
+		struct IDelegate
 		{
-			// Union that holds either a free function or a member function
-			union
-			{
-				void(*freeFunc)(const EventTypeBase&);
-				void(*memberFunc)(void*, const EventTypeBase&);
-			};
+			virtual ~IDelegate() = default;
+			virtual void operator()(const EventTypeBase&) const = 0;
+			//virtual bool operator==(const IDelegate&) const = 0;
+		};
 
-			// Instance for member function calls
-			void* m_instance = nullptr;
+		/// <summary>
+		/// A wrapper around a free function pointer and utility operators to invoke as a functor
+		/// </summary>
+		template<typename EventType>
+		requires CDerivedEvent<EventTypeBase, EventType>
+		struct FreeDelegate : public IDelegate
+		{
+			void(*freeFunc)(const EventType&);
 
 			/// <summary>
 			/// Construct to point to a free function
 			/// </summary>
 			/// <param name="func">A free function pointer</param>
-			Delegate(void(*func)(const EventTypeBase&)) : freeFunc(func) {}
+			explicit FreeDelegate(void(*func)(const EventType&)) : freeFunc(func) {}
+
+			/// <summary>
+			/// Will invoke the underlying function pointer with the provided event instance
+			/// </summary>
+			/// <param name="event">A reference to an event instance that derives from the base event type for this dispatcher</param>
+			void operator()(const EventTypeBase& event) const override
+			{
+				freeFunc(static_cast<const EventType&>(event));
+			}
+
+			/// <summary>
+			/// Compare one Delegate to another to determine if they point to the same function
+			/// </summary>
+			/// <param name="other">A reference to a Delegate instance to compare to</param>
+			/// <returns>True if the Delegates are the same, false otherwise</returns>
+			/*bool operator==(const IDelegate& other) const
+			{
+				return freeFunc == static_cast<const FreeDelegate&>(other).freeFunc;
+			}*/
+		};
+
+		/// <summary>
+		/// A wrapper around member function pointers and utility operators to invoke as a functor
+		/// </summary>
+		template<class T, typename EventType>
+		requires CDerivedEvent<EventTypeBase, EventType>
+		struct MemberDelegate : IDelegate
+		{
+			void(T::*memberFunc)(const EventType&);
+
+			// Instance for member function calls
+			T* m_instance;
 
 			/// <summary>
 			/// Construct to point to a member function
@@ -137,28 +173,15 @@ namespace UltReality::Utilities
 			/// <typeparam name="T">The type of object with the member function to point to</typeparam>
 			/// <param name="instance">Instance of the specified type to call the member function on</param>
 			/// <param name="func">A member function pointer</param>
-			template<class T>
-			Delegate(T* instance, void(T::* func)(const EventTypeBase&)) : m_instance(instance)
-			{
-				memberFunc = [](void* obj, const EventTypeBase& event) {
-					(static_cast<T*>(obj)->*func)(event);
-				};
-			}
+			explicit MemberDelegate(T* instance, void(T::*func)(const EventType&)) : m_instance(instance), memberFunc(func) {}
 
 			/// <summary>
 			/// Will invoke the underlying function pointer with the provided event instance
 			/// </summary>
 			/// <param name="event">A reference to an event instance that derives from the base event type for this dispatcher</param>
-			void operator()(const EventTypeBase& event) const
+			void operator()(const EventTypeBase& event) const override
 			{
-				if (!m_instance)
-				{
-					freeFunc(event);
-				}
-				else
-				{
-					memberFunc(m_instance, event);
-				}
+				(m_instance->*memberFunc)(static_cast<const EventType&>(event));
 			}
 
 			/// <summary>
@@ -166,23 +189,85 @@ namespace UltReality::Utilities
 			/// </summary>
 			/// <param name="other">A reference to a Delegate instance to compare to</param>
 			/// <returns>True if the Delegates are the same, false otherwise</returns>
-			bool operator==(const Delegate& other) const
+			/*bool operator==(const IDelegate& other) const override
 			{
-				return m_instance == other.m_instance
-					&& ((!m_instance && freeFunc == other.freeFunc) || (m_instance && memberFunc == other.memberFunc));
-			}
+				return m_instance == static_cast<const MemberDelegate&>(other).m_instance
+					&& (memberFunc == static_cast<const MemberDelegate&>(other).memberFunc);
+			}*/
 		};
+
+		/// <summary>
+		/// A wrapper around function pointers and utility operators to invoke as a functor
+		/// </summary>
+		template<typename Callable, typename EventType>
+		requires CDerivedEvent<EventTypeBase, EventType>
+		struct Delegate_t : public IDelegate
+		{
+			Callable callable;
+
+			explicit Delegate_t(Callable&& c) : callable(std::move(c)) {}
+
+			/// <summary>
+			/// Will invoke the underlying function pointer with the provided event instance
+			/// </summary>
+			/// <param name="event">A reference to an event instance that derives from the base event type for this dispatcher</param>
+			void operator()(const EventTypeBase& event) const override
+			{
+				callable(static_cast<const EventType&>(event));
+			}
+
+			/// <summary>
+			/// Compare one Delegate to another to determine if they point to the same function and reference the same object instance if applicable
+			/// </summary>
+			/// <param name="other">A reference to a Delegate instance to compare to</param>
+			/// <returns>True if the Delegates are the same, false otherwise</returns>
+			/*bool operator==(const IDelegate& other) const override
+			{
+				if (const auto* otherDelegate = dynamic_cast<const Delegate_t*>(&other))
+				{
+					return &callable == &otherDelegate->callable;
+				}
+				return false;
+			}*/
+		};
+
+		template<typename T>
+		struct function_traits;
+
+		// Specialization fot std::function
+		template<typename Ret, typename... Args>
+		struct function_traits<std::function<Ret(Args...)>>
+		{
+			using result_type = Ret;
+			using args_tuple = std::tuple<Args...>;
+		};
+
+		// Fallback for callable objects, including lambdas
+		template<typename Callable>
+		struct function_traits : function_traits<decltype(&Callable::operator())> {};
+
+		// Specialization for lambdas or any callable objects with 'operator()'
+		template<typename Ret, typename ClassType, typename... Args>
+		struct function_traits<Ret(ClassType::*)(Args...) const>
+		{
+			using result_type = Ret;
+			using args_tuple = std::tuple<Args...>;
+		};
+
+		// Helper to get the type of the first argument (event type in the case of lambdas passed to Subscribe)
+		template<typename Callable>
+		using first_argument_t = std::tuple_element_t<0, typename function_traits<Callable>::args_tuple>;
 
 
 		size_t m_batchSize; // The maximum number of events to process in one batch
 
 		// Unsynchronized collections for same-thread access
 		std::queue<std::shared_ptr<EventTypeBase>> m_eventQueue; // A queue of event instances that this dispatcher will process
-		std::unordered_map<EnumType, std::vector<Delegate>> m_listeners; // A map of listeners associated with the event types that will trigger them
+		std::unordered_map<EnumType, std::unordered_map<size_t, std::shared_ptr<IDelegate>>> m_listeners; // A map of listeners associated with the event types that will trigger them
 
 		// Synchronized collections for cross-thread access
 		std::queue<std::shared_ptr<EventTypeBase>> m_syncEventQueue;
-		std::unordered_map<EnumType, std::vector<Delegate>> m_syncListeners;
+		std::unordered_map<EnumType, std::unordered_map<size_t, std::shared_ptr<IDelegate>>> m_syncListeners;
 
 		// Mutexes for synchronized collections
 		mutable std::mutex m_eventQueueMutex;
@@ -193,116 +278,311 @@ namespace UltReality::Utilities
 		{}
 
 		/// <summary>
-		/// Call to add an event to the queue for the manager to dispatch to subscribers
-		/// Not thread safe. Only call from same thread in series
+		/// Set the batch size. It is recommended to set a multiple of 2, as there are two internal queues that each get allocated half this number ber batch dispatch
 		/// </summary>
-		/// <param name="event">An instance of a supported event type</param>
-		FORCE_INLINE void QueueEvent(const EventTypeBase& event)
+		/// <param name="batchSize">The number of events to dispatch per batch in total</param>
+		void SetBatchSize(size_t batchSize)
 		{
-			m_eventQueue.emplace(std::make_shared<EventTypeBase>(event));
+			m_batchSize = batchSize;
 		}
 
 		/// <summary>
-		/// Call to add an event to the queue for the manager to dispatch to subscribers
-		/// Thread safe. Can be called from concurrent threads
+		/// Check to see if total queue volume is 0
 		/// </summary>
-		/// <param name="event">An instance of a supported event type</param>
-		FORCE_INLINE void SyncQueueEvent(const EventTypeBase& event)
+		/// <returns>True if there are no queued events, false otherwise</returns>
+		bool IsQueueEmpty()
 		{
 			std::lock_guard<std::mutex> lock(m_eventQueueMutex);
-			m_syncEventQueue.emplace(std::make_shared<EventTypeBase>(event));
+			return m_eventQueue.empty() && m_syncEventQueue.empty();
 		}
 
 		/// <summary>
-		/// Call to subscribe a listener callback method for one or many supported event types
+		/// Get the total queue volume
+		/// </summary>
+		/// <returns>The total number of events queued for dispatch</returns>
+		size_t QueueSize()
+		{
+			std::lock_guard<std::mutex> lock(m_eventQueueMutex);
+			return m_eventQueue.size() + m_syncEventQueue.size();
+		}
+
+		/// <summary>
+		/// Call to add an event to the queue for the manager to dispatch to subscribers
 		/// Not thread safe. Only call from same thread in series
 		/// </summary>
-		/// <param name="listener">An instance of a delegate that takes an 'EventTypeBase' compatible const reference</param>
-		template<EnumType... EventTypes>
-		FORCE_INLINE void Subscribe(FreeFunction listener)
+		/// <param name="event">An instance of a supported event type</param>
+		template<typename T>
+		requires CDerivedEvent<EventTypeBase, T>
+		FORCE_INLINE void QueueEvent(const T& event)
 		{
-			(m_listeners[EventTypes].emplace_back(listener), ...);
+			m_eventQueue.emplace(std::make_shared<T>(event));
 		}
 
 		/// <summary>
-		/// Unsubscribe a listener from specified events
+		/// Call to add an event to the queue for the manager to dispatch to subscribers
+		/// Thread safe. Can be called from concurrent threads
 		/// </summary>
-		template<EnumType... EventTypes>
-		FORCE_INLINE void Unsubscribe(FreeFunction listener)
+		/// <param name="event">An instance of a supported event type</param>
+		template<typename T>
+		requires CDerivedEvent<EventTypeBase, T>
+		FORCE_INLINE void SyncQueueEvent(const T& event)
 		{
-			(RemoveListener(m_listeners[EventTypes], Delegate(listener)), ...);
+			std::lock_guard<std::mutex> lock(m_eventQueueMutex);
+			m_syncEventQueue.emplace(std::make_shared<T>(event));
 		}
 
 		/// <summary>
-		/// Call to subscribe a listener callback method for one or many supported event types
+		/// Call to subscribe a free function listener for one or many supported event types
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="func">A pointer to a free function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void Subscribe(void(*func)(const EventType&), Events... eventTypes)
+		{
+			((m_listeners[eventTypes][Hash(func)] = std::make_shared<FreeDelegate<EventType>>(func)), ...);
+		}
+
+		/// <summary>
+		/// Unsubscribe a free function listener from specified events
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="func">A pointer to a free function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void Unsubscribe(void(*func)(const EventType&), Events... eventTypes)
+		{
+			(m_listeners[eventTypes].erase(Hash(func)), ...);
+		}
+
+		/// <summary>
+		/// Call to subscribe a member function listener for one or many supported event types
 		/// Not thread safe. Only call from same thread in series
 		/// </summary>
 		/// <param name="instance">An instance of the object with the member function to point to</param>
-		/// <param name="listener">An instance of a delegate that takes an 'EventTypeBase' compatible const reference</param>
-		template<class T, EnumType... EventTypes>
-		FORCE_INLINE void Subscribe(T* instance, MemberFunction<T> listener)
+		/// <param name="func">A pointer to a member function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<class T, typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void Subscribe(T* instance, void(T::*func)(const EventType&), Events... eventTypes)
 		{
-			(m_listeners[EventTypes].emplace_back(instance, listener), ...);
+			((m_listeners[eventTypes][Hash(instance, func)] = std::make_shared<MemberDelegate<T, EventType>>(instance, func)), ...);
 		}
 
 		/// <summary>
-		/// Unsubscribe a listener from specified events
+		/// Unsubscribe a member function listener from specified events
+		/// Not thread safe. Only call from same thread in series
 		/// </summary>
-		template<class T, EnumType... EventTypes>
-		FORCE_INLINE void Unsubscribe(T* instance, MemberFunction<T> listener)
+		/// <param name="instance">An instance of the object with the member function pointed to</param>
+		/// <param name="func">A pointer to a member function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<class T, typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void Unsubscribe(T* instance, void(T::*func)(const EventType&), Events... eventTypes)
 		{
-			(RemoveListener(m_listeners[EventTypes], Delegate(instance, listener)), ...);
-		}
-
-		template<EnumType EventType, typename Callable>
-		FORCE_INLINE void Subscribe(const Callable& lambda)
-		{
-			m_listeners[EventType].emplace_back(&lambda, &Callable::operator());
+			(m_listeners[eventTypes].erase(Hash(instance, func)), ...);
 		}
 
 		/// <summary>
-		/// Call to subscribe a listener callback method for one or many supported event types
+		/// Call to subscribe a general callable object (lambda, std::function) listener for one or many supported event types
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		Subscribe(Callable&& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+
+			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<Callable, EventType>>(std::forward<Callable>(callable))), ...);
+		}
+
+		/// <summary>
+		/// Call to subscribe a general callable object (lambda, std::function) listener for one or many supported event types
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		Subscribe(const Callable& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<std::remove_reference_t<decltype(Callable)>>>;
+
+			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_reference_t<decltype(Callable)>, EventType>>(callable)), ...);
+		}
+
+		/// <summary>
+		/// Unsubscribe a general callable object (lambda, std::function) listener from specified events
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		Unsubscribe(Callable&& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+
+			(m_listeners[eventTypes].erase(Hash(callable)), ...);
+		}
+
+		/// <summary>
+		/// Unsubscribe a general callable object (lambda, std::function) listener from specified events
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		Unsubscribe(const Callable& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+
+			(m_listeners[eventTypes].erase(Hash(callable)), ...);
+		}
+
+		/// <summary>
+		/// Call to subscribe a free function listener for one or many supported event types
 		/// Thread safe. Can be called from concurrent threads
 		/// </summary>
-		/// <param name="listener">An instance of a delegate that takes an 'EventTypeBase' compatible const reference</param>
-		template<EnumType... EventTypes>
-		FORCE_INLINE void SyncSubscribe(FreeFunction listener)
+		/// <param name="func">A pointer to a free function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void SyncSubscribe(void(*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			(m_syncListeners[EventTypes].emplace_back(listener), ...);
+			((m_syncListeners[eventTypes][Hash(func)] = std::make_shared<FreeDelegate<EventType>>(func)), ...);
 		}
 
 		/// <summary>
-		/// Unsubscribe a listener from specified events in thread safe manner
+		/// Unsubscribe a free function listener from specified events
+		/// Thread safe. Can be called from concurrent threads
 		/// </summary>
-		template<EnumType... EventTypes>
-		FORCE_INLINE void SyncUnsubscribe(FreeFunction listener)
+		/// <param name="func">A pointer to a free function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void SyncUnsubscribe(void(*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			(RemoveListener(m_syncListeners[EventTypes], Delegate(listener)), ...);
+			(m_syncListeners[eventTypes].erase(Hash(func)), ...);
 		}
 
 		/// <summary>
-		/// Call to subscribe a listener callback method for one or many supported event types
+		/// Call to subscribe a member function listener for one or many supported event types
 		/// Thread safe. Can be called from concurrent threads
 		/// </summary>
 		/// <param name="instance">An instance of the object with the member function to point to</param>
-		/// <param name="listener">An instance of a delegate that takes an 'EventTypeBase' compatible const reference</param>
-		template<class T, EnumType... EventTypes>
-		FORCE_INLINE void SyncSubscribe(T* instance, MemberFunction<T> listener)
+		/// <param name="func">A pointer to a member function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<class T, typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void SyncSubscribe(T* instance, void(T::*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			(m_syncListeners[EventTypes].emplace_back(instance, listener), ...);
+
+			((m_syncListeners[eventTypes][Hash(instance, func)] = std::make_shared<MemberDelegate<T, EventType>>(instance, func)), ...);
 		}
 
 		/// <summary>
-		/// Unsubscribe a listener from specified events in a thread safe manner
+		/// Unsubscribe a member function listener from specified events
+		/// Thread safe. Can be called from concurrent threads
 		/// </summary>
-		template<class T, EnumType... EventTypes>
-		FORCE_INLINE void SyncUnsubscribe(T* instance, MemberFunction<T> listener)
+		/// <param name="instance">An instance of the object with the member function pointed to</param>
+		/// <param name="func">A pointer to a member function that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<class T, typename EventType, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		&& CDerivedEvent<EventTypeBase, EventType>
+		FORCE_INLINE void SyncUnsubscribe(T* instance, void(T::*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			(RemoveListener(m_syncListeners[EventTypes], Delegate(instance, listener)), ...);
+
+			(m_syncListeners[eventTypes].erase(Hash(instance, func)), ...);
+		}
+
+		/// <summary>
+		/// Call to subscribe a general callable object (lambda, std::function) listener for one or many supported event types
+		/// Thread safe. Can be called by concurrently operating threads
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		SyncSubscribe(Callable&& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+
+			std::lock_guard<std::mutex> lock(m_listenerMutex);
+			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<Callable, EventType>>(std::forward<Callable>(callable))), ...);
+		}
+
+		/// <summary>
+		/// Call to subscribe a general callable object (lambda, std::function) listener for one or many supported event types
+		/// Thread safe. Can be called by concurrently operating threads
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		SyncSubscribe(const Callable& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+
+			std::lock_guard<std::mutex> lock(m_listenerMutex);
+			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::decay_t<decltype(Callable)>, EventType>>(callable)), ...);
+		}
+
+		/// <summary>
+		/// Unsubscribe a general callable object (lambda, std::function) listener from specified events
+		/// Thread safe. Can be called by concurrently operating threads
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		SyncUnsubscribe(Callable&& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+
+			std::lock_guard<std::mutex> lock(m_listenerMutex);
+			(m_syncListeners[eventTypes].erase(Hash(callable)), ...);
+		}
+
+		/// <summary>
+		/// Unsubscribe a general callable object (lambda, std::function) listener from specified events
+		/// Thread safe. Can be called by concurrently operating threads
+		/// </summary>
+		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
+		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
+		template<typename Callable, typename... Events>
+		requires (std::is_same_v<EnumType, Events> && ...)
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
+		SyncUnsubscribe(const Callable& callable, Events... eventTypes)
+		{
+			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+
+			std::lock_guard<std::mutex> lock(m_listenerMutex);
+			(m_syncListeners[eventTypes].erase(Hash(callable)), ...);
 		}
 
 		/// <summary>
@@ -311,24 +591,43 @@ namespace UltReality::Utilities
 		/// </summary>
 		void DispatchBatch()
 		{
-			size_t count = std::min(m_eventQueue.size(), m_batchSize);
+			std::lock_guard<std::mutex> queueLock(m_eventQueueMutex);
+			std::lock_guard<std::mutex> listenerLock(m_listenerMutex);
+
+			size_t halfBatchSize = m_batchSize / 2;
+
+			size_t count = std::min(m_eventQueue.size(), halfBatchSize);
+			size_t syncCount = std::min(m_syncEventQueue.size(), halfBatchSize);
+
+			size_t remaining = m_batchSize - (count + syncCount);
+
+			// If there's still room in the batch, take the remainder from the other queue
+			if (remaining > 0)
+			{
+				if (count < halfBatchSize)
+				{
+					syncCount = std::min(syncCount + remaining, m_syncEventQueue.size());
+				}
+				else
+				{
+					count = std::min(count + remaining, m_eventQueue.size());
+				}
+			}
 
 			for (size_t i = 0; i < count; i++)
 			{
 				const auto& event = m_eventQueue.front();
-				m_eventQueue.pop();
 				NotifySubscribers(event, m_listeners);
+				NotifySubscribers(event, m_syncListeners);
+				m_eventQueue.pop();
 			}
 
-			std::lock_guard<std::mutex> queueLock(m_eventQueueMutex);
-			size_t syncCount = std::min(m_syncEventQueue.size(), m_batchSize);
-
-			std::lock_guard<std::mutex> listenerLock(m_listenerMutex);
-			for (size_t i = 0; i < count; i++)
+			for (size_t i = 0; i < syncCount; i++)
 			{
 				const auto& event = m_syncEventQueue.front();
-				m_syncEventQueue.pop();
+				NotifySubscribers(event, m_listeners);
 				NotifySubscribers(event, m_syncListeners);
+				m_syncEventQueue.pop();
 			}
 		}
 
@@ -337,20 +636,21 @@ namespace UltReality::Utilities
 		/// </summary>
 		void DispatchAll()
 		{
+			std::lock_guard<std::mutex> queueLock(m_eventQueueMutex);
+			std::lock_guard<std::mutex> listenerLock(m_listenerMutex);
+
 			while (!m_eventQueue.empty())
 			{
 				const auto& event = m_eventQueue.front();
-				m_eventQueue.pop();
 				NotifySubscribers(event, m_listeners);
+				m_eventQueue.pop();
 			}
 
-			std::lock_guard<std::mutex> queueLock(m_eventQueueMutex);
-			std::lock_guard<std::mutex> listenerLock(m_listenerMutex);
 			while (!m_syncEventQueue.empty())
 			{
 				const auto& event = m_syncEventQueue.front();
-				m_syncEventQueue.pop();
 				NotifySubscribers(event, m_syncListeners);
+				m_syncEventQueue.pop();
 			}
 		}
 
@@ -360,14 +660,14 @@ namespace UltReality::Utilities
 		/// </summary>
 		/// <param name="event">An event instance being processed</param>
 		FORCE_INLINE void NotifySubscribers(const std::shared_ptr<EventTypeBase>& event, 
-			const std::unordered_map<typename EventTypeBase::EnumType, std::vector<Delegate>>& listeners)
+			const std::unordered_map<EnumType, std::unordered_map<size_t, std::shared_ptr<IDelegate>>>& listeners)
 		{
 			auto it = listeners.find(event->type);
 			if (it != listeners.end())
 			{
 				for (const auto& callback : it->second)
 				{
-					callback(*event);
+					callback.second->operator()(*event);
 				}
 			}
 		}
@@ -377,12 +677,30 @@ namespace UltReality::Utilities
 		/// </summary>
 		/// <param name="listeners">Reference to the vector to search and remove from</param>
 		/// <param name="delegate">Instance to remove, used to compare to instance in vector</param>
-		FORCE_INLINE void RemoveListener(std::vector<Delegate>& listeners, Delegate&& delegate)
+		/*FORCE_INLINE void RemoveListener(std::unordered_map<size_t, std::shared_ptr<IDelegate>>& listeners, size_t hash)
 		{
-			listeners.erase(
-				std::remove(listeners.begin(), listeners.end(), std::move(delegate)),
-				listeners.end()
-			);
+			listeners.erase(hash);
+		}*/
+
+		template<typename EventType>
+		FORCE_INLINE size_t Hash(void(*func)(const EventType&))
+		{
+			return std::hash<void*>()(reinterpret_cast<void*>(func));
+		}
+
+		template<typename T, typename EventType>
+		FORCE_INLINE size_t Hash(T* instance, void(T::*func)(const EventType&))
+		{
+			size_t instanceHash = std::hash<T*>()(instance);
+			size_t funcHash = std::type_index(typeid(func)).hash_code();
+			return instanceHash ^ (funcHash << 1);
+		}
+
+		template<typename Callable>
+		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, size_t>
+		Hash(const Callable& callable)
+		{
+			return typeid(callable).hash_code();
 		}
 	};
 }

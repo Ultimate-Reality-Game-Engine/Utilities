@@ -141,8 +141,9 @@ namespace UltReality::Utilities
 			RButton = MK_RBUTTON, // The right mouse button is down
 			Shift = MK_SHIFT, // The shift key is down
 			XButton1 = MK_XBUTTON1, // The first X button is down
-			XButton2 = MK_XBUTTON2 // The second X button is down
+			XButton2 = MK_XBUTTON2, // The second X button is down
 #endif
+			None
 		};
 
 		enum class XButton
