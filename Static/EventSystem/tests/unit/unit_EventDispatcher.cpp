@@ -26,7 +26,8 @@ public:
 };
 
 // Test if a lambda listener is called when a specific event is dispatched.
-TEST_F(EventDispatcherTest, ListenerCalledOnDispatch) {
+TEST_F(EventDispatcherTest, ListenerCalledOnDispatch)
+{
     bool listenerCalled = false;
 
     dispatcher.Subscribe([&](const EWindowResize& event) {
@@ -79,8 +80,8 @@ TEST_F(EventDispatcherTest, UnsubscribePreventsNotification)
     bool listenerCalled = false;
 
     auto lambda = [&](const EWindowResize&) { listenerCalled = true; };
-    dispatcher.Subscribe(std::move(lambda), PlatformEvents::EWindowResize);
-    dispatcher.Unsubscribe(std::move(lambda), PlatformEvents::EWindowResize);
+    dispatcher.Subscribe(lambda, PlatformEvents::EWindowResize);
+    dispatcher.Unsubscribe(lambda, PlatformEvents::EWindowResize);
 
     dispatcher.QueueEvent(EWindowResize(1280, 720, EWindowResize::SizeDetails::Restored));
     dispatcher.DispatchBatch();
@@ -140,10 +141,10 @@ TEST_F(EventDispatcherTest, SyncSubscribeAndUnsubscribeThreadSafety)
     std::atomic<int> callCount{ 0 };
 
     auto lambda = [&](const EWindowResize&) { ++callCount; };
-    dispatcher.SyncSubscribe(std::move(lambda), PlatformEvents::EWindowResize);
+    dispatcher.SyncSubscribe(lambda, PlatformEvents::EWindowResize);
 
-    std::thread t1([&]() { dispatcher.SyncUnsubscribe(std::move(lambda), PlatformEvents::EWindowResize); });
-    std::thread t2([&]() { dispatcher.SyncSubscribe(std::move(lambda), PlatformEvents::EWindowResize); });
+    std::thread t1([&]() { dispatcher.SyncUnsubscribe(lambda, PlatformEvents::EWindowResize); });
+    std::thread t2([&]() { dispatcher.SyncSubscribe(lambda, PlatformEvents::EWindowResize); });
 
     t1.join();
     t2.join();

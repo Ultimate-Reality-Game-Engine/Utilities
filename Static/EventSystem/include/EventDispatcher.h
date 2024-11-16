@@ -206,6 +206,7 @@ namespace UltReality::Utilities
 			Callable callable;
 
 			explicit Delegate_t(Callable&& c) : callable(std::move(c)) {}
+			explicit Delegate_t(const Callable& c) : callable(c) {}
 
 			/// <summary>
 			/// Will invoke the underlying function pointer with the provided event instance
@@ -234,29 +235,29 @@ namespace UltReality::Utilities
 		template<typename T>
 		struct function_traits;
 
-		// Specialization fot std::function
+		// Specialization for callable (like Lambdas)
 		template<typename Ret, typename... Args>
-		struct function_traits<std::function<Ret(Args...)>>
+		struct function_traits<Ret(Args...)>
 		{
-			using result_type = Ret;
+			using return_type = Ret;
 			using args_tuple = std::tuple<Args...>;
 		};
 
 		// Fallback for callable objects, including lambdas
-		template<typename Callable>
-		struct function_traits : function_traits<decltype(&Callable::operator())> {};
+		template<typename T>
+		struct function_traits : function_traits<decltype(&T::operator())> {};
 
 		// Specialization for lambdas or any callable objects with 'operator()'
-		template<typename Ret, typename ClassType, typename... Args>
+		template<typename ClassType, typename Ret, typename... Args>
 		struct function_traits<Ret(ClassType::*)(Args...) const>
 		{
-			using result_type = Ret;
+			using return_type = Ret;
 			using args_tuple = std::tuple<Args...>;
 		};
 
 		// Helper to get the type of the first argument (event type in the case of lambdas passed to Subscribe)
 		template<typename Callable>
-		using first_argument_t = std::tuple_element_t<0, typename function_traits<Callable>::args_tuple>;
+		using first_argument_t = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<Callable>::args_tuple>>;
 
 
 		size_t m_batchSize; // The maximum number of events to process in one batch
@@ -396,13 +397,14 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		Subscribe(Callable&& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_lvalue_reference_v<Callable>)
+		FORCE_INLINE void Subscribe(Callable&& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
-			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<Callable, EventType>>(std::forward<Callable>(callable))), ...);
+			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_cvref_t<Callable>, EventType>>(std::move(callable))), ...);
 		}
 
 		/// <summary>
@@ -412,13 +414,14 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		Subscribe(const Callable& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_rvalue_reference_v<Callable>)
+		FORCE_INLINE void Subscribe(const Callable& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<std::remove_reference_t<decltype(Callable)>>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
-			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_reference_t<decltype(Callable)>, EventType>>(callable)), ...);
+			((m_listeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_cvref_t<Callable>, EventType>>(callable)), ...);
 		}
 
 		/// <summary>
@@ -428,11 +431,12 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		Unsubscribe(Callable&& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_lvalue_reference_v<Callable>)
+		FORCE_INLINE void Unsubscribe(Callable&& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			(m_listeners[eventTypes].erase(Hash(callable)), ...);
 		}
@@ -444,11 +448,12 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		Unsubscribe(const Callable& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_rvalue_reference_v<Callable>)
+		FORCE_INLINE void Unsubscribe(const Callable& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			(m_listeners[eventTypes].erase(Hash(callable)), ...);
 		}
@@ -465,6 +470,7 @@ namespace UltReality::Utilities
 		FORCE_INLINE void SyncSubscribe(void(*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
+
 			((m_syncListeners[eventTypes][Hash(func)] = std::make_shared<FreeDelegate<EventType>>(func)), ...);
 		}
 
@@ -480,6 +486,7 @@ namespace UltReality::Utilities
 		FORCE_INLINE void SyncUnsubscribe(void(*func)(const EventType& event), Events... eventTypes)
 		{
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
+
 			(m_syncListeners[eventTypes].erase(Hash(func)), ...);
 		}
 
@@ -524,14 +531,16 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		SyncSubscribe(Callable&& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_lvalue_reference_v<Callable>)
+		FORCE_INLINE void SyncSubscribe(Callable&& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<Callable, EventType>>(std::forward<Callable>(callable))), ...);
+
+			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_cvref_t<Callable>, EventType>>(std::move(callable))), ...);
 		}
 
 		/// <summary>
@@ -541,14 +550,16 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to subscribe to</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		SyncSubscribe(const Callable& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_rvalue_reference_v<Callable>)
+		FORCE_INLINE void SyncSubscribe(const Callable& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
-			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::decay_t<decltype(Callable)>, EventType>>(callable)), ...);
+
+			((m_syncListeners[eventTypes][Hash(callable)] = std::make_shared<Delegate_t<std::remove_cvref_t<Callable>, EventType>>(callable)), ...);
 		}
 
 		/// <summary>
@@ -558,13 +569,15 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		SyncUnsubscribe(Callable&& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_lvalue_reference_v<Callable>)
+		FORCE_INLINE void SyncUnsubscribe(Callable&& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<Callable>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
+
 			(m_syncListeners[eventTypes].erase(Hash(callable)), ...);
 		}
 
@@ -575,13 +588,15 @@ namespace UltReality::Utilities
 		/// <param name="callable">An rvalue reference to a callable object that takes an 'EventTypeBase' compatible const reference</param>
 		/// <param name="eventTypes">A pack of 'EnumType' values specifying the event types to unsubscribe from</param>
 		template<typename Callable, typename... Events>
-		requires (std::is_same_v<EnumType, Events> && ...)
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, void>
-		SyncUnsubscribe(const Callable& callable, Events... eventTypes)
+		requires ((std::is_same_v<EnumType, Events> && ...)
+		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
+		&& !std::is_rvalue_reference_v<Callable>)
+		FORCE_INLINE void SyncUnsubscribe(const Callable& callable, Events... eventTypes)
 		{
-			using EventType = std::remove_cvref_t<first_argument_t<std::decay_t<decltype(Callable)>>>;
+			using EventType = first_argument_t<std::remove_cvref_t<Callable>>;
 
 			std::lock_guard<std::mutex> lock(m_listenerMutex);
+
 			(m_syncListeners[eventTypes].erase(Hash(callable)), ...);
 		}
 
@@ -697,8 +712,8 @@ namespace UltReality::Utilities
 		}
 
 		template<typename Callable>
-		FORCE_INLINE typename std::enable_if_t<!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>, size_t>
-		Hash(const Callable& callable)
+		requires (!std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>)
+		FORCE_INLINE size_t Hash(const Callable& callable)
 		{
 			return typeid(callable).hash_code();
 		}
