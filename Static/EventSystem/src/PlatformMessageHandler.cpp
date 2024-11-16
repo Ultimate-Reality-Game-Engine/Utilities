@@ -10,6 +10,22 @@ namespace UltReality::Utilities
 #if defined(_WIN_TARGET)
 #include <windowsx.h>
 
+	void PlatformMessageHandler::ProcessPlatformMessages()
+	{
+		MSG msg = { 0 };
+
+		// Process all available messages in the process queue
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			DispatchMessage(&msg);
+		}
+	}
+
+	void PlatformMessageHandler::PostQuit()
+	{
+		PostQuitMessage(0);
+	}
+
 	LRESULT PlatformMessageHandler::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (msg)
@@ -40,19 +56,34 @@ namespace UltReality::Utilities
 
 			return 0;
 
+		case WM_CLOSE:
+			m_eventDispatcher.QueueEvent(EWindowClose());
+
+			return 0;
+
 		// WM_DESTROY is sent when the window is being destroyed
 		case WM_DESTROY:
 			m_eventDispatcher.QueueEvent(EWindowDestroy());
 
 			return 0;
 
-		// The WM_MENUCHAR message is sent when a menu is active and the user presses 
-		// a key that does not correspond to any mnemonic or accelerator key 
-		case WM_MENUCHAR:
-			m_eventDispatcher.QueueEvent(EWindowMenuChar());
+		case WM_SETFOCUS:
+			m_eventDispatcher.QueueEvent(EWindowFocusGained());
 
-			// Don't beep when we alt-enter.
-			return MAKELRESULT(0, MNC_CLOSE);
+			return 0;
+
+		case WM_KILLFOCUS:
+			m_eventDispatcher.QueueEvent(EWindowFocusLost());
+
+			return 0;
+
+		//// The WM_MENUCHAR message is sent when a menu is active and the user presses 
+		//// a key that does not correspond to any mnemonic or accelerator key 
+		//case WM_MENUCHAR:
+		//	m_eventDispatcher.QueueEvent(EWindowMenuChar());
+
+		//	// Don't beep when we alt-enter.
+		//	return MAKELRESULT(0, MNC_CLOSE);
 
 		// Catch this message to set maximum and minimum window size available when dragging borders
 		case WM_GETMINMAXINFO:

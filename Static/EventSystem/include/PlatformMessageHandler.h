@@ -23,8 +23,10 @@ namespace UltReality::Utilities
 		EWindowResize, // Triggered when the user resizes the window
 		EWindowEnterSizeMove, // Triggered when the user grabs the resize bars
 		EWindowExitSizeMove, // Triggered when the user releases the resize bars
+		EWindowClose, // Triggered when a close request is sent
 		EWindowDestroy, // Triggered when the window is being destroyed
-		EWindowMenuChar, // Triggered when a menu is active and the user presses a key that does not correspond to any mnemonic or accelerator key
+		EWindowFocusGained, // Triggered when the window gains focus
+		EWindowFocusLost, // Triggered when the window looses focus
 		EWindowGetMinMaxInfo, // Triggered to provide size of window
 		EMouseLDown, // Triggered when left mouse button pressed
 		EMouseLUp, // Triggered when left mouse button released
@@ -103,15 +105,30 @@ namespace UltReality::Utilities
 		EWindowExitSizeMove() : PlatformMessageEvent(PlatformEvents::EWindowExitSizeMove) {}
 	};
 
+	struct EWindowClose : public PlatformMessageEvent
+	{
+		EWindowClose() : PlatformMessageEvent(PlatformEvents::EWindowClose) {}
+	};
+
 	struct EWindowDestroy : public PlatformMessageEvent
 	{
 		EWindowDestroy() : PlatformMessageEvent(PlatformEvents::EWindowDestroy) {}
 	};
 
-	struct EWindowMenuChar : public PlatformMessageEvent
+	struct EWindowFocusGained : public PlatformMessageEvent
+	{
+		EWindowFocusGained() : PlatformMessageEvent(PlatformEvents::EWindowFocusGained) {}
+	};
+
+	struct EWindowFocusLost : public PlatformMessageEvent
+	{
+		EWindowFocusLost() : PlatformMessageEvent(PlatformEvents::EWindowFocusLost) {}
+	};
+
+	/*struct EWindowMenuChar : public PlatformMessageEvent
 	{
 		EWindowMenuChar() : PlatformMessageEvent(PlatformEvents::EWindowMenuChar) {}
-	};
+	};*/
 
 	struct EWindowMinMax : public PlatformMessageEvent
 	{
@@ -455,6 +472,10 @@ namespace UltReality::Utilities
 		PlatformMessageHandler() = delete;
 
 		static EventDispatcher<PlatformMessageEvent>& GetPlatformEventDispatcher() noexcept;
+
+		static void ProcessPlatformMessages();
+
+		static void PostQuit();
 
 #if defined(_WIN_TARGET)
 		/// <summary>
