@@ -2,9 +2,11 @@
 
 namespace UltReality::Utilities
 {
-	PlatformMessageHandler::PlatformMessageHandler(EventDispatcher<PlatformMessageEvent>& eventDispatcher) noexcept
-		: m_eventDispatcher(eventDispatcher)
-	{}
+	EventDispatcher<PlatformMessageEvent>& PlatformMessageHandler::GetPlatformEventDispatcher() noexcept
+	{
+		return m_eventDispatcher;
+	}
+
 #if defined(_WIN_TARGET)
 #include <windowsx.h>
 

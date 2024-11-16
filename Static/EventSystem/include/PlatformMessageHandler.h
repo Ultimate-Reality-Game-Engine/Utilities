@@ -449,10 +449,12 @@ namespace UltReality::Utilities
 	class PlatformMessageHandler
 	{
 	private:
-		EventDispatcher<PlatformMessageEvent>& m_eventDispatcher;
+		inline static EventDispatcher<PlatformMessageEvent> m_eventDispatcher;
 
 	public:
-		explicit PlatformMessageHandler(EventDispatcher<PlatformMessageEvent>& eventDispatcher) noexcept;
+		PlatformMessageHandler() = delete;
+
+		static EventDispatcher<PlatformMessageEvent>& GetPlatformEventDispatcher() noexcept;
 
 #if defined(_WIN_TARGET)
 		/// <summary>
@@ -463,7 +465,7 @@ namespace UltReality::Utilities
 		/// <param name="wParam">First parameter associated with the message</param>
 		/// <param name="lParam">Second parameter associated with the message</param>
 		/// <returns>Windows defined status or message back to OS</returns>
-		LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #elif defined(_LINUX_TARGET)
 
 #elif defined(_MAC_TARGET)
