@@ -93,6 +93,9 @@ foreach(dir ${Shared_DIRS})
 		list(APPEND UtilitiesShared_HEADERS "${dir}/include")
 	endif()
 endforeach()
+list(APPEND UtilitiesShared_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Shared/include")
+
+#message(STATUS ${UtilitiesShared_HEADERS})
 
 if(NOT DEFINED UTILITIES_SHARED_BUILD)
 	set(UTILITIES_SHARED_BUILD ON)
@@ -102,6 +105,8 @@ if(UTILITIES_SHARED_BUILD)
 	# Create the UtilitiesShared target
 	if(UtilitiesShared_SOURCE)
 		add_library(UtilitiesShared SHARED ${UtilitiesShared_SOURCE})
+
+		target_compile_definitions(UtilitiesShared PRIVATE LIBRARY_EXPORTS)
 
 		# Set up include directories for the shared library target
 		foreach(header_dir ${UtilitiesShared_HEADERS})
@@ -130,6 +135,7 @@ foreach(dir ${Static_DIRS})
 		list(APPEND UtilitiesStatic_HEADERS "${dir}/include")
 	endif()
 endforeach()
+
 if(NOT DEFINED UTILITIES_STATIC_BUILD)
 	set(UTILITIES_STATIC_BUILD ON)
 endif()
@@ -272,15 +278,20 @@ if (Utilities_BUILD_TESTS)
 		set_target_properties(run_all_unit_tests PROPERTIES INSTALLABLE OFF)
 	endif()
 
-	# Collect all the directories from the root
-	file(GLOB_RECURSE Utilities_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
-
 	set(TESTS_DIRS "")
-	foreach(dir ${Utilities_DIRS})
+	foreach(dir ${Shared_DIRS})
 		if(IS_DIRECTORY "${dir}/tests")
 			list(APPEND TESTS_DIRS "${dir}/tests")
 		endif()
 	endforeach()
+
+	foreach(dir ${Static_DIRS})
+		if(IS_DIRECTORY "${dir}/tests")
+			list(APPEND TESTS_DIRS "${dir}/tests")
+		endif()
+	endforeach()
+
+	#message(STATUS ${TESTS_DIRS})
 
 	# Do not install GTest when packaging Utilities targets
 	set(INSTALL_GTEST OFF)

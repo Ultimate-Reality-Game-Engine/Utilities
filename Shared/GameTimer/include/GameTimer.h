@@ -5,9 +5,11 @@
 #include <chrono>
 #include <shared_mutex>
 
+#include <LibraryExport.h>
+
 namespace UltReality::Utilities
 {
-	class GameTimer
+	class LIBRARY_ABI GameTimer
 	{
 	private:
 		double m_deltaTime = 0.0;
@@ -32,51 +34,51 @@ namespace UltReality::Utilities
 		/// <summary>
 		/// Deletes the singleton, frees memory
 		/// </summary>
-		~GameTimer() noexcept;
+		LIBRARY_CALL ~GameTimer() noexcept;
 
 		/// <summary>
 		/// Gets a pointer to the singleton's instance. Creates the instance if it doesn't exist
 		/// </summary>
 		/// <returns>Pointer to instance</returns>
-		static GameTimer* GetInstance() noexcept;
+		static GameTimer* LIBRARY_CALL GetInstance() noexcept;
 
 		/// <summary>
 		/// Gets the total time the application has been running (including paused time)
 		/// </summary>
 		/// <returns>Total running time</returns>
-		double GetTotalTime() const noexcept;
+		double LIBRARY_CALL GetTotalTime() const noexcept;
 
 		/// <summary>
 		/// Gets the total time the application has been running and active (minus paused time)
 		/// </summary>
 		/// <returns>Active time since initialization</returns>
-		double GetGameTime() const noexcept;
+		double LIBRARY_CALL GetGameTime() const noexcept;
 
 		/// <summary>
 		/// Gets the amount of time that has elapsed since the last time step
 		/// </summary>
 		/// <returns>Elapsed time</returns>
-		double GetDeltaTime() const noexcept;
+		double LIBRARY_CALL GetDeltaTime() const noexcept;
 
 		/// <summary>
 		/// Call this method to set the timer's initial state and prepare it for update
 		/// </summary>
-		void Initialize() noexcept; // Call before message loop
+		void LIBRARY_CALL Initialize() noexcept; // Call before message loop
 
 		/// <summary>
 		/// Start the timer up/un-pause
 		/// </summary>
-		void Start() noexcept; // Call when unpaused
+		void LIBRARY_CALL Start() noexcept; // Call when unpaused
 
 		/// <summary>
 		/// Stop the timer/pause
 		/// </summary>
-		void Stop() noexcept; // Call when paused
+		void LIBRARY_CALL Stop() noexcept; // Call when paused
 
 		/// <summary>
 		/// Update timer state to measure elapsed time since last call
 		/// </summary>
-		void Tick() noexcept; // Call every frame
+		void LIBRARY_CALL Tick() noexcept; // Call every frame
 
 		GameTimer(const GameTimer&) = delete;
 		GameTimer& operator=(const GameTimer&) = delete;
