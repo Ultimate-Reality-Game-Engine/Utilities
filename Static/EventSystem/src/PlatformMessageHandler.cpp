@@ -21,7 +21,7 @@ namespace UltReality::Utilities
 		}
 	}
 
-	void PlatformMessageHandler::PostQuit()
+	void PlatformMessageHandler::PostQuit(const EWindowDestroy&)
 	{
 		PostQuitMessage(0);
 	}

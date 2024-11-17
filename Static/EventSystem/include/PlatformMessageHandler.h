@@ -475,7 +475,7 @@ namespace UltReality::Utilities
 
 		static void ProcessPlatformMessages();
 
-		static void PostQuit();
+		static void PostQuit(const EWindowDestroy&);
 
 #if defined(_WIN_TARGET)
 		/// <summary>
