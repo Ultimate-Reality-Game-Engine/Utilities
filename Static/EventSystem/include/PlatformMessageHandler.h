@@ -25,6 +25,7 @@ namespace UltReality::Utilities
 		EWindowExitSizeMove, // Triggered when the user releases the resize bars
 		EWindowClose, // Triggered when a close request is sent
 		EWindowDestroy, // Triggered when the window is being destroyed
+		EQuit, // Triggered when the application is terminating
 		EWindowFocusGained, // Triggered when the window gains focus
 		EWindowFocusLost, // Triggered when the window looses focus
 		EWindowGetMinMaxInfo, // Triggered to provide size of window
@@ -113,6 +114,13 @@ namespace UltReality::Utilities
 	struct EWindowDestroy : public PlatformMessageEvent
 	{
 		EWindowDestroy() : PlatformMessageEvent(PlatformEvents::EWindowDestroy) {}
+	};
+
+	struct EQuit : public PlatformMessageEvent
+	{
+		int32_t code;
+
+		EQuit(int32_t c) : PlatformMessageEvent(PlatformEvents::EQuit), code(c) {}
 	};
 
 	struct EWindowFocusGained : public PlatformMessageEvent

@@ -17,6 +17,11 @@ namespace UltReality::Utilities
 		// Process all available messages in the process queue
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
+			if (msg.message == WM_QUIT)
+			{
+				m_eventDispatcher.QueueEvent(EQuit(static_cast<int32_t>(msg.wParam)));
+				break;
+			}
 			DispatchMessage(&msg);
 		}
 	}
