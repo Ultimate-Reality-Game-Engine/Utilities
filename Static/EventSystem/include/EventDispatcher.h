@@ -1,6 +1,11 @@
 #ifndef ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
 #define ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
 
+#pragma push_macro("min")
+#pragma push_macro("max")
+#undef min
+#undef max
+
 #include <concepts>
 #include <queue>
 #include <unordered_map>
@@ -720,3 +725,5 @@ namespace UltReality::Utilities
 	};
 }
 #endif // !ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
+#pragma pop_macro("min")
+#pragma pop_macro("max")
