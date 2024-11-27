@@ -28,19 +28,24 @@ namespace UltReality::Utilities
 		/// <summary>
 		/// Used internally by GetInstance
 		/// </summary>
-		GameTimer() noexcept;
+		GameTimer() noexcept = default;
+
+		/// <summary>
+		/// Used internally. Must call DestroyInstance to free singleton
+		/// </summary>
+		~GameTimer() noexcept = default;
 
 	public:
-		/// <summary>
-		/// Deletes the singleton, frees memory
-		/// </summary>
-		LIBRARY_CALL ~GameTimer() noexcept;
-
 		/// <summary>
 		/// Gets a pointer to the singleton's instance. Creates the instance if it doesn't exist
 		/// </summary>
 		/// <returns>Pointer to instance</returns>
 		static GameTimer* LIBRARY_CALL GetInstance() noexcept;
+
+		/// <summary>
+		/// Call to destroy the singleton instance and free its memory
+		/// </summary>
+		static void LIBRARY_CALL DestroyInstance() noexcept;
 
 		/// <summary>
 		/// Gets the total time the application has been running (including paused time)

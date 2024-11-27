@@ -4,18 +4,6 @@
 
 namespace UltReality::Utilities
 {
-	GameTimer::GameTimer() noexcept
-	{}
-
-	GameTimer::~GameTimer() noexcept
-	{
-		if (GameTimer::s_instance)
-		{
-			delete s_instance;
-			s_instance = nullptr;
-		}
-	}
-
 	GameTimer* GameTimer::GetInstance() noexcept
 	{
 		// Acquire a concurrent read lock (shared) for read access
@@ -38,6 +26,18 @@ namespace UltReality::Utilities
 
 		// Return the instance pointer
 		return GameTimer::s_instance;
+	}
+
+	void GameTimer::DestroyInstance() noexcept
+	{
+		// Acquire exclusive lock
+		std::unique_lock<std::shared_mutex> writeLock(s_sharedMutex);
+
+		if (s_instance)
+		{
+			delete s_instance;
+			s_instance = nullptr;
+		}
 	}
 
 	double GameTimer::GetTotalTime() const noexcept
