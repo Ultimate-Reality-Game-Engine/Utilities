@@ -4,6 +4,8 @@
 #include <EventBase_t.h>
 #include <EventDispatcher.h>
 
+#include <DisplayTarget.h>
+
 #if defined(_WIN_TARGET)
 #include <windows.h>
 #elif defined(_LINUX_TARGET)
@@ -481,7 +483,7 @@ namespace UltReality::Utilities
 
 		static EventDispatcher<PlatformMessageEvent>& GetPlatformEventDispatcher() noexcept;
 
-		static void ProcessPlatformMessages();
+		static void ProcessPlatformMessages(UltReality::Rendering::DisplayTarget target);
 
 		static void PostQuit(const EWindowDestroy&);
 

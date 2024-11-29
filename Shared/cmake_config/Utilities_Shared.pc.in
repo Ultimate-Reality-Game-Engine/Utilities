@@ -3,8 +3,8 @@ libdir=@LIBDIR_FOR_PKG_CONFIG@
 includedir=@INCLUDEDIR_FOR_PKG_CONFIG@
 
 Name: @PROJECT_NAME@
-Description: General Utilities library containing components used throughout the Engine
-URL: https://github.com/Ultimate-Reality-Game-Engine/Utilities
+Description: Agnostic system for window creation and use in rendering
+URL: https://github.com/Ultimate-Reality-Game-Engine/Display-Target
 Version: @PROJECT_VERSION@
 Cflags: -I${includedir}
-Libs: -lUtilities
+Libs: -lDisplayTarget

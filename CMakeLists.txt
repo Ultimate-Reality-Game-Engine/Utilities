@@ -24,11 +24,11 @@ endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "List of supported build modes." FORCE)
 
 # Define compiler definitions to create OS specific code segments
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN32) # Windows target
 	add_compile_definitions(TARGET_OS=Windows _WIN_TARGET)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(UNIX AND NOT APPLE) # Linux target
 	add_compile_definitions(TARGET_OS=Linux _LINUX_TARGET)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin") #MacOS
+elseif(APPLE) #MacOS target
 	add_compile_definitions(TARGET_OS=MacOS _MACOS_TARGET)
 endif()
 
@@ -83,175 +83,14 @@ generate_from_template(${CONFIG_TEMPLATES_DIR}/src ${GENERATED_SRC_DIR} cpp)
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 
-# Create list of all source files to be used in this target
-file(GLOB_RECURSE UtilitiesShared_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/Shared/*/src/*.cpp")
-file(GLOB_RECURSE Shared_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/Shared/*)
-
-set(UtilitiesShared_HEADERS "")
-foreach(dir ${Shared_DIRS})
-	if(IS_DIRECTORY "${dir}/include")
-		list(APPEND UtilitiesShared_HEADERS "${dir}/include")
-	endif()
-endforeach()
-list(APPEND UtilitiesShared_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Shared/include")
-
-#message(STATUS ${UtilitiesShared_HEADERS})
-
-if(NOT DEFINED UTILITIES_SHARED_BUILD)
-	set(UTILITIES_SHARED_BUILD ON)
-endif()
-
-if(UTILITIES_SHARED_BUILD)
-	# Create the UtilitiesShared target
-	if(UtilitiesShared_SOURCE)
-		add_library(UtilitiesShared SHARED ${UtilitiesShared_SOURCE})
-
-		target_compile_definitions(UtilitiesShared PRIVATE LIBRARY_EXPORTS)
-
-		# Set up include directories for the shared library target
-		foreach(header_dir ${UtilitiesShared_HEADERS})
-			target_include_directories(UtilitiesShared PUBLIC 
-				$<BUILD_INTERFACE:${header_dir}> 
- 				$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # This is used when the library is installed
-			)
-		endforeach()
-
-		# Link libraries to the target
-		#target_link_libraries()
-
-		set_target_properties(UtilitiesShared PROPERTIES 
-			VERSION ${PROJECT_VERSION} 
-			SOVERSION ${PROJECT_VERSION_MAJOR}
-		)
-	endif()
-endif()
-
-file(GLOB_RECURSE UtilitiesStatic_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/Static/*/src/*.cpp")
-file(GLOB_RECURSE Static_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/Static/*)
-
-set(UtilitiesStatic_HEADERS "")
-foreach(dir ${Static_DIRS})
-	if(IS_DIRECTORY "${dir}/include")
-		list(APPEND UtilitiesStatic_HEADERS "${dir}/include")
-	endif()
-endforeach()
-
-if(NOT DEFINED UTILITIES_STATIC_BUILD)
-	set(UTILITIES_STATIC_BUILD ON)
-endif()
-
-if(UTILITIES_STATIC_BUILD)
-	# Create the UtilitiesStatic target
-	if(UtilitiesStatic_SOURCE)
-		add_library(UtilitiesStatic STATIC ${UtilitiesStatic_SOURCE})
-
-		# Set up include directories for the shared library target
-		foreach(header_dir ${UtilitiesStatic_HEADERS})
-			target_include_directories(UtilitiesStatic PUBLIC 
-				$<BUILD_INTERFACE:${header_dir}> 
- 				$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # This is used when the library is installed
-			)
-		endforeach()
-
-		# Link libraries to the target
-		#target_link_libraries()
-
-		set_target_properties(UtilitiesStatic PROPERTIES 
-			VERSION ${PROJECT_VERSION} 
-			SOVERSION ${PROJECT_VERSION_MAJOR}
-		)
-	endif()
-endif()
+add_subdirectory(Shared)
+add_subdirectory(Static)
 
 # End Target Creation *****************************************************************************
 #**************************************************************************************************
 
 # Installation and Packing Configuration **********************************************************
 #**************************************************************************************************
-if(Utilities_INSTALL)
-	#if(UTILITIES_STATIC_BUILD) 
-	#	set(Utilities_TARGETS UtilitiesShared UtilitiesStatic)
-	#else()
-	#	set(Utilities_TARGETS UtilitiesShared)
-	#endif()
-
-	# Install the targets
-	install(
-		TARGETS UtilitiesShared UtilitiesStatic
-		EXPORT Utilities_Targets 
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # Static libraries/import libraries (.lib files for .dll linking) 
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # Shared libraries (.so) 
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # .exe or .dll 
-		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PUBLIC 
-		PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PRIVATE
-	)
-
-	# Create the targets CMake file which contains the above definitions
-	install(
-		EXPORT Utilities_Targets 
-		FILE Utilities_Targets.cmake 
-		NAMESPACE UltReality:: 
-		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/Utilities/cmake
-	)
-
-	# Install the actual includes
-	install(
-		DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-	)
-
-	# Generate and install the package version config files
-	include(CMakePackageConfigHelpers)
-	write_basic_package_version_file(
-		"Utilities_ConfigVersion.cmake" 
-		VERSION ${PROJECT_VERSION} 
-		COMPATIBILITY SameMajorVersion
-	)
-	configure_package_config_file(
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Config.cmake.in" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Config.cmake" 
-		INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/Utilities/cmake
-	)
-
-	# Install the CMake config files
-	install(
-		FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_ConfigVersion.cmake" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Config.cmake" 
-		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/Utilities/cmake
-	)
-
-	# Define Package install paths
-	set(INCLUDEDIR_FOR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-	set(LIBDIR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-
-	# Create and install the package config file
-	configure_file(
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities.pc.in" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities.pc" @ONLY
-	)
-
-	# Install the package config file
-	install(
-		FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities.pc" 
-		DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-	)
-
-	# A version that is often used to denote a specific build of the software, including revisions, builds, or other metadata
-	set(PACKAGE_VERSION_BUILD "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
-
-	set(PACKAGE_VERSION "${PROJECT_VERSION}-${PACKAGE_VERSION_BUILD}")
-
-	set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/out/package")
-
-	set(CPACK_PACKAGE_NAME "Utilities")
-	set(CPACK_PACKAGE_VERSION "${PACKAGE_VERSION}")
-
-	set(CPACK_PACKAGE_VENDOR "Andrew Todd")
-	set(CPACK_PACKAGE_CONTACT "andrewdanieltodd@gmail.com")
-	include(CPack)
-	message(STATUS "PACKAGE_VERSION is: ${PACKAGE_VERSION}")
-	message(STATUS "PACKAGE_FILE_NAME is: ${CPACK_PACKAGE_FILE_NAME}")
-endif()
 
 # End Installation and Packing Configuration ******************************************************
 #**************************************************************************************************
@@ -277,29 +116,6 @@ if (Utilities_BUILD_TESTS)
 		target_link_libraries(run_all_unit_tests PRIVATE GTest::gtest_main GenParseBase GenParseCmdLine)
 		set_target_properties(run_all_unit_tests PROPERTIES INSTALLABLE OFF)
 	endif()
-
-	set(TESTS_DIRS "")
-	foreach(dir ${Shared_DIRS})
-		if(IS_DIRECTORY "${dir}/tests")
-			list(APPEND TESTS_DIRS "${dir}/tests")
-		endif()
-	endforeach()
-
-	foreach(dir ${Static_DIRS})
-		if(IS_DIRECTORY "${dir}/tests")
-			list(APPEND TESTS_DIRS "${dir}/tests")
-		endif()
-	endforeach()
-
-	#message(STATUS ${TESTS_DIRS})
-
-	# Do not install GTest when packaging Utilities targets
-	set(INSTALL_GTEST OFF)
-	
-	# Add all the tests directories
-	foreach(tests_dir ${TESTS_DIRS})
-		add_subdirectory("${tests_dir}")
-	endforeach()
 endif()
 # End Create Unit Test Groups *********************************************************************
 #**************************************************************************************************

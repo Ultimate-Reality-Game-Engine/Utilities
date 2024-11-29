@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@LIBDIR_FOR_PKG_CONFIG@
+includedir=@INCLUDEDIR_FOR_PKG_CONFIG@
+
+Name: @PROJECT_NAME@
+Description: Agnostic system for window creation and use in rendering
+URL: https://github.com/Ultimate-Reality-Game-Engine/Display-Target
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}
+Libs: -lDisplayTarget
