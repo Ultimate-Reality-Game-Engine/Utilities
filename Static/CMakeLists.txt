@@ -35,7 +35,7 @@ if(UTILITIES_STATIC_BUILD)
 
 		include(FetchContent)
 
-		if (NOT TARGET RenderingCore)
+		if (NOT TARGET RendererInterface)
 		# Fetch the RendererInterface library
 		FetchContent_Declare(
 			RenderingCore 
