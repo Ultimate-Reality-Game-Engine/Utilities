@@ -10,12 +10,12 @@ namespace UltReality::Utilities
 #if defined(_WIN_TARGET)
 #include <windowsx.h>
 
-	void PlatformMessageHandler::ProcessPlatformMessages(UltReality::Rendering::DisplayTarget target)
+	void PlatformMessageHandler::ProcessPlatformMessages()
 	{
 		MSG msg = { 0 };
 
 		// Process all available messages in the process queue
-		while (PeekMessage(&msg, target.ToHWND(), 0, 0, PM_REMOVE))
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
 			{
