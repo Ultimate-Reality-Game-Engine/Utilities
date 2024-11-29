@@ -36,13 +36,15 @@ if(UTILITIES_STATIC_BUILD)
 		include(FetchContent)
 
 		if (NOT TARGET RendererInterface)
-		# Fetch the RendererInterface library
-		FetchContent_Declare(
-			RenderingCore 
-			GIT_REPOSITORY https://github.com/Ultimate-Reality-Game-Engine/Rendering_Core.git 
-			GIT_TAG master
-		)
-		FetchContent_MakeAvailable(RenderingCore)
+			if(NOT TARGET DisplayTarget)
+			# Fetch the RendererInterface library
+			FetchContent_Declare(
+				RenderingCore 
+				GIT_REPOSITORY https://github.com/Ultimate-Reality-Game-Engine/Rendering_Core.git 
+				GIT_TAG master
+			)
+			FetchContent_MakeAvailable(RenderingCore)
+			endif()
 		endif()
 
 		# Link libraries to the target
