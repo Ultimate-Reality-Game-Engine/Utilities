@@ -33,22 +33,8 @@ if(UTILITIES_STATIC_BUILD)
 			)
 		endforeach()
 
-		include(FetchContent)
-
-		if (NOT TARGET RendererInterface)
-			if(NOT TARGET DisplayTarget)
-			# Fetch the RendererInterface library
-			FetchContent_Declare(
-				RenderingCore 
-				GIT_REPOSITORY https://github.com/Ultimate-Reality-Game-Engine/Rendering_Core.git 
-				GIT_TAG master
-			)
-			FetchContent_MakeAvailable(RenderingCore)
-			endif()
-		endif()
-
 		# Link libraries to the target
-		target_link_libraries(UtilitiesStatic DisplayTarget)
+		#target_link_libraries(UtilitiesStatic )
 
 		set_target_properties(UtilitiesStatic PROPERTIES 
 			VERSION ${PROJECT_VERSION} 
@@ -63,12 +49,6 @@ endif()
 # Installation and Packing Configuration **********************************************************
 #**************************************************************************************************
 if(Utilities_INSTALL)
-	#if(UTILITIES_STATIC_BUILD) 
-	#	set(Utilities_TARGETS UtilitiesShared UtilitiesStatic)
-	#else()
-	#	set(Utilities_TARGETS UtilitiesShared)
-	#endif()
-
 	# Install the targets
 	install(
 		TARGETS UtilitiesStatic
