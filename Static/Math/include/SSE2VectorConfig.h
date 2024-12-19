@@ -8,42 +8,7 @@
 // Library version
 #define VECTOR_MATH_LIB_VERSION 100 // 1.0.0
 
-// Determine calling convention
-#if defined(_MSC_VER) && !defined(_M_ARM) && !defined(_M_ARM64) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC) && (!_MANAGED) && (!_M_CEE) && (!defined(_M_IX86_FP) || (_M_IX86_FP > 1)) && !defined(_NO_INTRINSICS_) && !defined(_VECTORCALL_)
-#define _VECTORCALL_ 1
-#endif
-
-#if defined(_VECTORCALL_)
-#define VEC_CALLCONV __vectorcall
-#elif defined(__GNUC__) || defined(__clang__)
-#define VEC_CALLCONV 
-#else
-#define VEC_CALLCONV __fastcall
-#endif
-
-// Set deprecated macro value
-#if !defined(_DEPRECATED)
-#if (__cplusplus >= 201402L)
-#define _DEPRECATED [[deprecated]]
-#elif defined(__GNUC__) || defined(__clang__)
-#define _DEPRECATED __attribute__ ((deprecated))
-#else
-#define _DEPRECATED __declspec(deprecated("This is deprecated and will be removed in a future version"))
-#endif
-#endif
-
-// Set SSE2 Intrinsic level
-#if !defined(_SSE2_INTRINSICS_) && !defined(_NO_INTRINSICS_)
-#if (defined(_M_IX86) || defined(_M_X64) || __i386__ || ____x86_64__) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC)
-#define _SSE2_INTRINSICS_
-#elif !defined(_NO_INTRINSICS_)
-#error SIMD not supported on this target
-#endif
-#endif
-
-#if defined(_SSE2_INTRINSICS_) && defined(_MSC_VER) && (_MSC_VER >= 1920) && !defined(__clang__) && !defined(_SVML_INTRINSICS_) && !defined(_DISABLE_SVML_)
-#define _SVML_INTRINSICS_
-#endif
+#include <SIMDLevel.h>
 
 #if !defined(_NO_VECTOR_OVERLOADS_) && (defined(__clang__) || defined(__GNUC__)) && !defined(_NO_INTRINSICS_)
 #define _NO_VEC_OVERLOADS_
@@ -772,6 +737,24 @@ namespace UltReality::Math
         VECTOR VEC_CALLCONV VectorLessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
         VECTOR VEC_CALLCONV VectorInBounds(A_VECTOR v, A_VECTOR bounds) noexcept;
         VECTOR VEC_CALLCONV VectorInBoundsR(_Out_ uint32_t* pCR, _In_ A_VECTOR v, _In_ A_VECTOR bounds) noexcept;
+
+        VECTOR VEC_CALLCONV VectorIsNaN(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV VectorIsInfinite(A_VECTOR v) noexcept;
+
+        VECTOR VEC_CALLCONV VectorMin(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorMax(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorRound(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV VectorTruncate(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV VectorFloor(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV VectorCeiling(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV VectorClamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept;
+        VECTOR VEC_CALLCONV VectorSaturate(A_VECTOR v) noexcept;
+
+        VECTOR VEC_CALLCONV VectorAndInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorAndCInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorOrInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorNorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV VectorXorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
 	}
 
 	// The purpose of the following global constants is to prevent redundant

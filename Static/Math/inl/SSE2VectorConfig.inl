@@ -1127,6 +1127,9 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			*y = v.vector4_f32[1];
 
+#elif defined(_SSE4_INTRINSICS_)
+			*(reinterpret_cast<int*>(y)) = _mm_extract_ps(v, 1);
+
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(1, 1, 1, 1));
 			_mm_store_ss(y, vTemp);
@@ -1143,6 +1146,9 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			*z = v.vector4_f32[2];
 
+#elif defined(_SSE4_INTRINSICS_)
+			*(reinterpret_cast<int*>(z)) = _mm_extract_ps(v, 2);
+
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(2, 2, 2, 2));
 			_mm_store_ss(z, vTemp);
@@ -1158,6 +1164,9 @@ namespace UltReality::Math
 
 #if defined(_NO_INTRINSICS_)
 			*w = v.vector4_f32[3];
+
+#elif defined(_SSE4_INTRINSICS_)
+			*(reinterpret_cast<int*>(w)) = _mm_extract_ps(v, 3);
 
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(3, 3, 3, 3));
@@ -1197,6 +1206,10 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[1];
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			return static_cast<uint32_t>(_mm_extract_epi32(V1, 1));
+
 #elif defined(_SSE2_INTRINSICS_)
 			__m128i vResulti = _mm_shuffle_epi32(_mm_castps_si128(v), _MM_SHUFFLE(1, 1, 1, 1));
 			return static_cast<uint32_t>(_mm_cvtsi128_si32(vResulti));
@@ -1208,6 +1221,10 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[2];
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			return static_cast<uint32_t>(_mm_extract_epi32(V1, 2));
+
 #elif defined(_SSE2_INTRINSICS_)
 			__m128i vResulti = _mm_shuffle_epi32(_mm_castps_si128(v), _MM_SHUFFLE(2, 2, 2, 2));
 			return static_cast<uint32_t>(_mm_cvtsi128_si32(vResulti));
@@ -1218,6 +1235,10 @@ namespace UltReality::Math
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[3];
+
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			return static_cast<uint32_t>(_mm_extract_epi32(V1, 3));
 
 #elif defined(_SSE2_INTRINSICS_)
 			__m128i vResulti = _mm_shuffle_epi32(_mm_castps_si128(v), _MM_SHUFFLE(3, 3, 3, 3));
@@ -1269,6 +1290,10 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			*y = v.vector4_u32[1];
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			*y = static_cast<uint32_t>(_mm_extract_epi32(V1, 1));
+
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(1, 1, 1, 1));
 			_mm_store_ss(reinterpret_cast<float*>(y), vResult);
@@ -1285,6 +1310,10 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			*z = v.vector4_u32[2];
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			*z = static_cast<uint32_t>(_mm_extract_epi32(V1, 2));
+
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(2, 2, 2, 2));
 			_mm_store_ss(reinterpret_cast<float*>(z), vResult);
@@ -1300,6 +1329,10 @@ namespace UltReality::Math
 
 #if defined(_NO_INTRINSICS_)
 			*w = v.vector4_u32[3];
+
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i V1 = _mm_castps_si128(v);
+			*w = static_cast<uint32_t>(_mm_extract_epi32(V1, 3));
 
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(3, 3, 3, 3));
@@ -1339,6 +1372,11 @@ namespace UltReality::Math
 			VECTOR_F32 U = { { { v.vector4_f32[0], y, v.vector4_f32[2], v.vector_f32[3] } } };
 			return U.v;
 
+#elif defined(_SSE4_INTRINSICS_)
+			VECTOR vResult = _mm_set_ss(y);
+			vResult = _mm_insert_ps(v, vResult, 0x10);
+			return vResult;
+
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap y and x
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(3, 2, 0, 1));
@@ -1362,6 +1400,11 @@ namespace UltReality::Math
 			VECTOR_F32 U = { { { v.vector4_f32[0], v.vector4_f32[1], z, v.vector_f32[3] } } };
 			return U.v;
 
+#elif defined(_SSE4_INTRINSICS_)
+			VECTOR vResult = _mm_set_ss(z);
+			vResult = _mm_insert_ps(v, vResult, 0x20);
+			return vResult;
+
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap z and x
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(3, 0, 1, 2));
@@ -1384,6 +1427,11 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 U = { { { v.vector4_f32[0], v.vector4_f32[1], v.vector4_f32[2], w}}};
 			return U.v;
+
+#elif defined(_SSE4_INTRINSICS_)
+			VECTOR vResult = _mm_set_ss(w);
+			vResult = _mm_insert_ps(v, vResult, 0x30);
+			return vResult;
 
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap w and x
@@ -1538,6 +1586,11 @@ namespace UltReality::Math
 			VECTOR_U32 U = { { { v.vector4_u32[0], y, v.vector4_u32[2], v.vector_u32[3] } } };
 			return U.v;
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i vResult = _mm_castps_si128(v);
+			vResult = _mm_insert_epi32(vResult, static_cast<int>(y), 1);
+			return _mm_castsi128_ps(vResult);
+
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap y and x
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(3, 2, 0, 1));
@@ -1560,6 +1613,11 @@ namespace UltReality::Math
 			VECTOR_U32 U = { { { v.vector4_u32[0], v.vector4_u32[1], z, v.vector_u32[3] } } };
 			return U.v;
 
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i vResult = _mm_castps_si128(v);
+			vResult = _mm_insert_epi32(vResult, static_cast<int>(z), 2);
+			return _mm_castsi128_ps(vResult);
+
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap z and x
 			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(3, 0, 1, 2));
@@ -1581,6 +1639,11 @@ namespace UltReality::Math
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 U = { { { v.vector4_u32[0], v.vector4_u32[1], v.vector_u32[2], w } } };
 			return U.v;
+
+#elif defined(_SSE4_INTRINSICS_)
+			__m128i vResult = _mm_castps_si128(v);
+			vResult = _mm_insert_epi32(vResult, static_cast<int>(w), 3);
+			return _mm_castsi128_ps(vResult);
 
 #elif defined(_SSE2_INTRINSICS_)
 			// Swap w and x
@@ -2031,6 +2094,624 @@ namespace UltReality::Math
 			*pCR = CR;
 
 			return _mm_castsi128_ps(v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorNearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			float deltaX = V1.vector4_f32[0] - V2.vector4_f32[0];
+			float deltaY = V1.vector4_f32[1] - V2.vector4_f32[1];
+			float deltaZ = V1.vector4_f32[2] - V2.vector4_f32[2];
+			float deltaW = V1.vector4_f32[3] - V2.vector4_f32[3];
+
+			deltaX = fabsf(deltaX);
+			deltaY = fabsf(deltaY);
+			deltaZ = fabsf(deltaZ);
+			deltaW = fabsf(deltaW);
+
+			VECTOR_U32 control = { { {
+				(deltaX <= epsilon.vector4_f32[0]) ? 0xFFFFFFFFU : 0,
+				(deltaY <= epsilon.vector4_f32[1]) ? 0xFFFFFFFFU : 0,
+				(deltaZ <= epsilon.vector4_f32[2]) ? 0xFFFFFFFFU : 0,
+				(deltaW <= epsilon.vector4_f32[3]) ? 0xFFFFFFFFU : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Get difference vector
+			VECTOR vDelta = _mm_sub_ps(V1, V2);
+
+			// Get absolute value of difference
+			VECTOR vTemp = _mm_setzero_ps();
+			vTemp = _mm_sub_ps(vTemp, vDelta);
+			vTemp = _mm_max_ps(vTemp, vDelta);
+			vTemp = _mm_cmple_ps(vTemp, epsilon);
+			
+			return vTemp;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorNotEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_f32[0] != V2.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[1] != V2.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[2] != V2.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[3] != V2.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_cmpneq_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorNotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_u32[0] != V2.vector4_u32[0]) ? 0xFFFFFFFFU : 0,
+				(V1.vector4_u32[1] != V2.vector4_u32[1]) ? 0xFFFFFFFFU : 0,
+				(V1.vector4_u32[2] != V2.vector4_u32[2]) ? 0xFFFFFFFFU : 0,
+				(V1.vector4_u32[3] != V2.vector4_u32[3]) ? 0xFFFFFFFFU : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i v = _mm_cmpeq_epi32(_mm_castps_si128(V1), _mm_castps_si128(V2));
+			return _mm_xor_ps(_mm_castsi128_ps(v), g_NegOneMask);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreater(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_f32[0] > V2.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[1] > V2.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[2] > V2.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[3] > V2.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_cmpgt_ps(V1, V2);
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pCR != nullptr);
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			uint32_t ux = (V1.vector4_f32[0] > V2.vector4_f32[0]) ? 0xFFFFFFFFU : 0;
+			uint32_t uy = (V1.vector4_f32[1] > V2.vector4_f32[1]) ? 0xFFFFFFFFU : 0;
+			uint32_t uz = (V1.vector4_f32[2] > V2.vector4_f32[2]) ? 0xFFFFFFFFU : 0;
+			uint32_t uw = (V1.vector4_f32[3] > V2.vector4_f32[3]) ? 0xFFFFFFFFU : 0;
+			uint32_t CR = 0;
+			if (ux & uy & uz & uw) // All elements of V1 are greater than those of V2
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (!(ux | uy | uz | uw)) // None of the elements of V1 are greater than those of V2
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+			*pCR = CR;
+
+			VECTOR_U32 control = { { { ux, uy, uz, uw } } };
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vTemp = _mm_cmpgt_ps(V1, V2);
+			uint32_t CR = 0;
+			int iTest = _mm_movemask_ps(vTemp);
+			if (iTest == 0xF) // All elements of V1 are greater than those of V2
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (!iTest) // None of the elements of V1 are greater than those of V2
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+			*pCR = CR;
+
+			return vTemp;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_f32[0] >= V2.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[1] >= V2.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[2] >= V2.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[3] >= V2.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_cmpge_ps(V1, V2);
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterOrEqualR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pCR != nullptr);
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			uint32_t ux = (V1.vector4_f32[0] >= V2.vector4_f32[0]) ? 0xFFFFFFFFU : 0;
+			uint32_t uy = (V1.vector4_f32[1] >= V2.vector4_f32[1]) ? 0xFFFFFFFFU : 0;
+			uint32_t uz = (V1.vector4_f32[2] >= V2.vector4_f32[2]) ? 0xFFFFFFFFU : 0;
+			uint32_t uw = (V1.vector4_f32[3] >= V2.vector4_f32[3]) ? 0xFFFFFFFFU : 0;
+			uint32_t CR = 0;
+			if (ux & uy & uz & uw) // All elements of V1 are greater than or equal to those of V2
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (!(ux | uy | uz | uw)) // None of the elements of V1 are greater than or equal to those of V2
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+			*pCR = CR;
+
+			VECTOR_U32 control = { { { ux, uy, uz, uw } } };
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vTemp = _mm_cmpge_ps(V1, V2);
+			uint32_t CR = 0;
+			int iTest = _mm_movemask_ps(vTemp);
+			if (iTest == 0xF) // All the elements of V1 are greater than or equal to those of V2
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (!iTest) // None of the elements of V1 are greater than or equal to those of V2
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+			*pCR = CR;
+
+			return vTemp;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorLess(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_f32[0] < V2.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[1] < V2.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[2] < V2.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[3] < V2.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_cmplt_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorLessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(V1.vector4_f32[0] <= V2.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[1] <= V2.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[2] <= V2.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(V1.vector4_f32[3] <= V2.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_cmple_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorInBounds(A_VECTOR v, A_VECTOR bounds) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				(v.vector4_f32[0] <= bounds.vector4_f32[0] && v.vector4_f32[0] >= -bounds.vector4_f32[0]) ? 0xFFFFFFFF : 0,
+				(v.vector4_f32[1] <= bounds.vector4_f32[1] && v.vector4_f32[1] >= -bounds.vector4_f32[1]) ? 0xFFFFFFFF : 0,
+				(v.vector4_f32[2] <= bounds.vector4_f32[2] && v.vector4_f32[2] >= -bounds.vector4_f32[2]) ? 0xFFFFFFFF : 0,
+				(v.vector4_f32[3] <= bounds.vector4_f32[3] && v.vector4_f32[3] >= -bounds.vector4_f32[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Test if provided vector is less than or equal to bounds vector
+			VECTOR vInUpperBound = _mm_cmple_ps(v, bounds);
+
+			// Negate the bounds and cache in bInLowerBounds for next operation
+			VECTOR vInLowerBound = _mm_mul_ps(bounds, g_NegativeOne);
+
+			// Test if provided vector is greater than or equal to negative bounds vector (cached in vInLowerBound)
+			vInLowerBound = _mm_cmpge_ps(v, vInLowerBound);
+
+			// Blend the inequalities. A component is within bounds if it satisfies both conditions
+			return _mm_and_ps(vInUpperBound, vInLowerBound);
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorInBoundsR(uint32_t* pCR, A_VECTOR v, A_VECTOR bounds) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pCR != nullptr);
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			uint32_t ux = (v.vector4_f32[0] <= bounds.vector4_f32[0] && v.vector4_f32[0] >= -bounds.vector4_f32[0]) ? 0xFFFFFFFFU : 0;
+			uint32_t uy = (v.vector4_f32[1] <= bounds.vector4_f32[1] && v.vector4_f32[1] >= -bounds.vector4_f32[1]) ? 0xFFFFFFFFU : 0;
+			uint32_t uz = (v.vector4_f32[2] <= bounds.vector4_f32[2] && v.vector4_f32[2] >= -bounds.vector4_f32[2]) ? 0xFFFFFFFFU : 0;
+			uint32_t uw = (v.vector4_f32[3] <= bounds.vector4_f32[3] && v.vector4_f32[3] >= -bounds.vector4_f32[3]) ? 0xFFFFFFFFU : 0;
+			uint32_t CR = 0;
+			if (ux & uy & uz & uw) // All elements of v are within bounds
+			{
+				CR = CRMASK_CR6BOUNDS;
+			}
+			*pCR = CR;
+
+			VECTOR_U32 control = { { { ux, uy, uz, uw } } };
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Test if provided vector is less than or equal to bounds vector
+			VECTOR vInUpperBound = _mm_cmple_ps(v, bounds);
+
+			// Negate the bounds and cache in bInLowerBounds for next operation
+			VECTOR vInLowerBound = _mm_mul_ps(bounds, g_NegativeOne);
+
+			// Test if provided vector is greater than or equal to negative bounds vector (cached in vInLowerBound)
+			vInLowerBound = _mm_cmpge_ps(v, vInLowerBound);
+
+			// Blend the inequalities. A component is within bounds if it satisfies both conditions
+			vInUpperBound = _mm_and_ps(vInUpperBound, vInLowerBound);
+
+			uint32_t CR = 0;
+			if (_mm_movemask_ps(vInUpperBound) == 0xF) // All elements of v are within bounds
+			{
+				CR = CRMASK_CR6BOUNDS;
+			}
+			*pCR = CR;
+
+			return vInUpperBound;
+#endif
+		}
+
+#if !defined(_NO_INTRINSICS_) && defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#pragma float_control(push)
+#pragma float_control(precise, on)
+#endif
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorIsNaN(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				ISNAN(v.vector4_f32[0]) ? 0xFFFFFFFFU : 0,
+				ISNAN(v.vector4_f32[1]) ? 0xFFFFFFFFU : 0,
+				ISNAN(v.vector4_f32[2]) ? 0xFFFFFFFFU : 0,
+				ISNAN(v.vector4_f32[3]) ? 0xFFFFFFFFU : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+#if defined(__clang__) && defined(__FINITE_MATH_ONLY__)
+			ALIGNED(16) float tmp[4];
+			_mm_store_ps(tmp, v);
+			VECTOR_U32 vResult = { { {
+				isnan(tmp[0]) ? 0xFFFFFFFF : 0,
+				isnan(tmp[1]) ? 0xFFFFFFFF : 0,
+				isnan(tmp[2]) ? 0xFFFFFFFF : 0,
+				isnan(tmp[3]) ? 0xFFFFFFFF : 0
+			} } };
+
+			return vResult.v;
+
+#else
+			// Test against itself; NaN is always not equal
+			return _mm_cmpneq_ps(v, v);
+#endif
+#endif
+		}
+
+#if !defined(_NO_INTRINSICS_) && defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#pragma float_control(pop)
+#endif
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorIsInfinite(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 control = { { {
+				ISINF(v.vector4_f32[0]) ? 0xFFFFFFFFU : 0,
+				ISINF(v.vector4_f32[1]) ? 0xFFFFFFFFU : 0,
+				ISINF(v.vector4_f32[2]) ? 0xFFFFFFFFU : 0,
+				ISINF(v.vector4_f32[3]) ? 0xFFFFFFFFU : 0
+			} } };
+
+			return control.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Mask off the sign bit
+			__m128 vTemp = _mm_and_ps(v, g_AbsMask);
+
+			// Compare to infinity
+			vTemp = _mm_cmpeq_ps(vTemp, g_Infinity);
+
+			return vTemp;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorMin(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				(V1.vector4_f32[0] < V2.vector4_f32[0]) ? V1.vector4_f32[0] : V2.vector4_f32[0],
+				(V1.vector4_f32[1] < V2.vector4_f32[1]) ? V1.vector4_f32[1] : V2.vector4_f32[1],
+				(V1.vector4_f32[2] < V2.vector4_f32[2]) ? V1.vector4_f32[2] : V2.vector4_f32[2],
+				(V1.vector4_f32[3] < V2.vector4_f32[3]) ? V1.vector4_f32[3] : V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_min_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorMax(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				(V1.vector4_f32[0] > V2.vector4_f32[0]) ? V1.vector4_f32[0] : V2.vector4_f32[0],
+				(V1.vector4_f32[1] > V2.vector4_f32[1]) ? V1.vector4_f32[1] : V2.vector4_f32[1],
+				(V1.vector4_f32[2] > V2.vector4_f32[2]) ? V1.vector4_f32[2] : V2.vector4_f32[2],
+				(V1.vector4_f32[3] > V2.vector4_f32[3]) ? V1.vector4_f32[3] : V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_max_ps(V1, V2);
+#endif
+		}
+
+		namespace
+		{
+			// Round to nearest (even) a.k.a. banker's rounding
+			FORCE_INLINE float round_to_nearest(float x) noexcept
+			{
+				float i = floorf(x);
+				x -= i;
+				if (x < 0.5f)
+					return i;
+				if (x > 0.5f)
+					return i + 1.0f;
+
+				float int_part;
+				(void)modff(i / 2.0f, &int_part);
+				if ((2.0f * int_part) == i)
+					return i;
+
+				return i + 1.0f;
+			}
+		}
+
+#if !defined(_NO_INTRINSICS_) && defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#pragma float_control(push)
+#pragma float_control(precise, on)
+#endif
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorRound(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				round_to_nearest(v.vector4_f32[0]),
+				round_to_nearest(v.vector4_f32[1]),
+				round_to_nearest(v.vector4_f32[2]),
+				round_to_nearest(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE4_INTRINSICS_)
+			return _mm_round_ps(v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 sign = _mm_and_ps(v, g_NegativeZero);
+			__m128 sMagic = _mm_or_ps(g_NoFraction, sign);
+			__m128 R1 = _mm_and_ps(v, sMagic);
+			R1 = _mm_sub_ps(R1, sMagic);
+			__m128 R2 = _mm_and_ps(v, g_AbsMask);
+			__m128 mask = _mm_cmple_ps(R2, g_NoFraction);
+			R2 = _mm_andnot_ps(mask, v);
+			R1 = _mm_and_ps(R1, mask);
+
+			VECTOR vResult = _mm_xor_ps(R1, R2);
+			return vResult;
+#endif
+		}
+
+#if !defined(_NO_INTRINSICS_) && defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#pragma float_control(pop)
+#endif
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorTruncate(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR result;
+
+			for (uint32_t i = 0; i < 4; i++)
+			{
+				if (ISNAN(v.vector4_f32[i]))
+				{
+					result.vector4_u32[i] = 0x7FC00000;
+				}
+				else if (fabsf(v.vector4_f32[i]) < 8388608.0f)
+				{
+					result.vector4_f32[i] = static_cast<float>(static_cast<int32_t>(v.vector4_f32[i]));
+				}
+				else
+				{
+					result.vector4_f32[i] = v.vector4_f32[i];
+				}
+			}
+
+			return result
+
+#elif defined(_SSE4_INTRINSICS_)
+			return _mm_round_ps(v, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTest = _mm_and_si128(_mm_castps_si128(v), g_AbsMask);
+
+			// Test for elements greater than 8388608 (All floats with no fractional, NAN and INF)
+			vTest = _mm_cmplt_epi32(vTest, g_NoFraction);
+
+			// Convert to int and back to float to truncate
+			__m128i vInt = _mm_cvttps_epi32(v);
+
+			VECTOR vResult = _mm_cvtepi32_ps(vInt);
+
+			// All elements less than 8388608 will use the result from round to int
+			vResult = _mm_and_ps(vResult, _mm_castsi128_ps(vTest));
+
+			// All elements greater than 8388608 will carry on the original value
+			vTest = _mm_andnot_si128(vTest, _mm_castps_si128(v));
+			vResult = _mm_or_ps(vResult, _mm_castsi128_ps(vTest));
+
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorFloor(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				floorf(v.vector4_f32[0]),
+				floorf(v.vector4_f32[1]),
+				floorf(v.vector4_f32[2]),
+				floorf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE4_INTRINSICS_)
+			return _mm_floor_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTest = _mm_and_si128(_mm_castps_si128(v), g_AbsMask);
+			vTest = _mm_cmplt_epi32(vTest, g_NoFraction);
+
+			// Cast elements to int to truncate
+			__m128i vInt = _mm_cvttps_epi32(v);
+
+			VECTOR vResult = _mm_cvtepi32_ps(vInt);
+			__m128 vLarger = _mm_cmpgt_ps(vResult, v);
+
+			// 0 -> 0, 0xFFFFFFFF -> -1.0f
+			vLarger = _mm_cvtepi32_ps(_mm_castps_si128(vLarger));
+			vResult = _mm_and_ps(vResult, vLarger);
+
+			// All elements less than 8388608 will use the result from round to int
+			vResult = _mm_and_ps(vResult, _mm_castsi128_ps(vTest));
+
+			// All elements greater than 8388608 will carry on the original value
+			vTest = _mm_andnot_si128(vTest, _mm_castps_si128(v));
+			vResult = _mm_or_ps(vResult, _mm_castsi128_ps(vTest));
+
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorCeiling(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				ceilf(v.vector4_f32[0]),
+				ceilf(v.vector4_f32[1]),
+				ceilf(v.vector4_f32[2]),
+				ceilf(v.vector4_f32[3])
+			} } };
+			return result.v;
+
+#elif defined(_SSE4_INTRINSICS_)
+			return _mm_ceil_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTest = _mm_and_si128(_mm_castps_si128(v), g_AbsMask);
+			vTest = _mm_cmplt_epi32(vTest, g_NoFraction);
+
+			// Cast elements to int to truncate
+			__m128i vInt = _mm_cvttps_epi32(v);
+
+			VECTOR vResult = _mm_cvtepi32_ps(vInt);
+
+			__m128 vSmaller = _mm_cmplt_ps(vResult, v);
+
+			// 0 -> 0, 0xFFFFFFFF -> -1.0f
+			vSmaller = _mm_cvtepi32_ps(_mm_castps_si128(vSmaller));
+			vResult = _mm_sub_ps(vResult, vSmaller);
+
+			// All elements less than 8388608 will use the result from round to int
+			vResult = _mm_and_ps(vResult, _mm_castsi128_ps(vTest));
+
+			// All elements greater than 8388608 will carry on the original value
+			vTest = _mm_andnot_si128(vTest, _mm_castps_si128(v));
+			vResult = _mm_or_ps(vResult, _mm_castsi128_ps(vTest));
+
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorClamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(Vector4LessOrEqual(min, max));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			VECTOR result = VectorMax(min, v);
+			
+			return VectorMin(max, result);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_max_ps(min, v);
+			return _mm_min_ps(max, vResult);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV VectorSaturate(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			const VECTOR zero = VectorZero();
+			return VectorClamp(v, zero, g_One.v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Set elements < 0 to 0
+			VECTOR vResult = _mm_max_ps(v, g_Zero);
+
+			// Set elements > 1 to 1
+			return _mm_min_ps(vResult, g_One);
 #endif
 		}
 
