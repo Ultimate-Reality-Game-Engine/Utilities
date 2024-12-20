@@ -19,8 +19,8 @@
 #pragma warning(disable:4514 4820)
 // C4514/4820: Off by default noise
 #endif
-//#include <math.h>
-//#include <float.h>
+#include <math.h>
+#include <float.h>
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -47,9 +47,21 @@
 #if defined(_SSE2_INTRINSICS_)
 #include <xmmintrin.h>
 #include <emmintrin.h>
+
+#if defined(_SSE3_INTRINSICS_)
+#include <pmmintrin.h>
 #endif
 
-#endif // !_NO_INTRINSICS
+#if defined(_SSE4_INTRINSICS_)
+#include <smmintrin.h>
+#endif
+
+#if defined(_AVX_INTRINSICS_)
+#include <immintrin.h>
+#endif
+#endif // _SSE2_INTRINSICS_
+
+#endif // !_NO_INTRINSICS_
 
 #if (__cplusplus >= 201703L)
 #define ALIGNED(x) alignas(x)
@@ -70,13 +82,27 @@
 
 #if defined(_NO_MOVNT_)
 #define STREAM_PS(p, a) _mm_store_ps((p), (a))
+#define _256_STREAM_PS(p, a) _mm256_store_ps((p), (a))
 #define SFENCE()
 #else
 #define STREAM_PS(p, a) _mm_stream_ps((p), (a))
+#define _256_STREAM_PS(p, a) _mm256_stream_ps((p), (a))
 #define SFENCE() _mm_sfence()
 #endif
 
+#if defined(_FMA3_INTRINSICS_)
+#define FMADD_PS(a, b, c) _mm_fmadd_ps((a), (b), (c))
+#define FNMADD_PS(a, b, c) _mm_fnmadd_ps((a), (b), (c))
+#else
+#define FMADD_PS(a, b, c) _mm_add_ps(_mm_mul_ps((a), (b)), (c))
+#define FNMADD_PS(a, b, c) _mm_sub_ps((c), _mm_mul_ps((a), (b)))
+#endif
+
+#if defined(_AVX_INTRINSICS_) && defined(_FAVOR_INTEL_)
+#define PERMUTE_PS(v, c) _mm_permute_ps((v), c)
+#else
 #define PERMUTE_PS(v, c) _mm_shuffle_ps((v), (v), c)
+#endif
 
 #if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ < 11)
 #define LOADU_SI16( p ) _mm_cvtsi32_si128(*reinterpret_cast<unsigned short const*>(p))
@@ -84,7 +110,7 @@
 #define LOADU_SI16( p ) _mm_loadu_si16(p)
 #endif
 
-#endif
+#endif // _SSE2_INTRINSICS_ && !_NO_INTRINSICS_
 
 #include <sal.h>
 #if defined(DEBUG) || defined(_DEBUG)
@@ -134,24 +160,27 @@ namespace UltReality::Math
 	using VECTOR = __vector4;
 #endif
 
-	// Define alias to be used for 1st-3rd vector type arguments. Passed in register for x86, and vector call convention; by reference otherwise
 #if (defined(_M_IX86) || _VECTORCALL_ || __i386__) && !defined(_NO_INTRINSICS_)
-	typedef const VECTOR A_VECTOR;
+    // Define alias to be used for 1st-3rd vector type arguments. Passed in register for x86, and vector call convention; by reference otherwise
+    typedef const VECTOR A_VECTOR;
 #else
+    // Define alias to be used for 1st-3rd vector type arguments. Passed in register for x86, and vector call convention; by reference otherwise
 	typedef const VECTOR& A_VECTOR;
 #endif
 
-	// Define alias to be used for 4th vector type argument. Passed in register for vector call convention; by reference otherwise
 #if _VECTORCALL_ && !defined(_NO_INTRINSICS_)
+    // Define alias to be used for 4th vector type argument. Passed in register for vector call convention; by reference otherwise
 	typedef const VECTOR B_VECTOR;
 #else
+    // Define alias to be used for 4th vector type argument. Passed in register for vector call convention; by reference otherwise
 	typedef const VECTOR& B_VECTOR;
 #endif
 
-	// Define alias to be used for 5th & 6th vector type arguments. Passes in register fore vector call convention; by reference otherwise
 #if _VECTORCALL_ && !defined(_NO_INTRINSICS_)
+    // Define alias to be used for 5th & 6th vector type arguments. Passes in register for vector call convention; by reference otherwise
 	typedef VECTOR C_VECTOR;
 #else
+    // Define alias to be used for 5th & 6th vector type arguments. Passes in register for vector call convention; by reference otherwise
 	typedef VECTOR& C_VECTOR;
 #endif
 
@@ -299,7 +328,7 @@ namespace UltReality::Math
         /// Returns a vector of 0.0f, 0.0f, 0.0f, 0.0f
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorZero() noexcept;
+        VECTOR VEC_CALLCONV Zero() noexcept;
         /// <summary>
         /// Returns a vector initialized with the four float values passed
         /// </summary>
@@ -308,7 +337,7 @@ namespace UltReality::Math
         /// <param name="z">Z component</param>
         /// <param name="w">W component</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSet(float x, float y, float z, float w) noexcept;
+        VECTOR VEC_CALLCONV Set(float x, float y, float z, float w) noexcept;
         /// <summary>
         /// Returns a vector initialized with the four integer values passed
         /// </summary>
@@ -317,90 +346,90 @@ namespace UltReality::Math
         /// <param name="z">Z component</param>
         /// <param name="w">W component</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w) noexcept;
+        VECTOR VEC_CALLCONV SetInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the float value passed
         /// </summary>
         /// <param name="value">Float to replicate</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorReplicate(float value) noexcept;
+        VECTOR VEC_CALLCONV Replicate(float value) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the float passed by pointer
         /// </summary>
         /// <param name="pValue">Pointer to the float to replicate</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorReplicatePtr(_In_ const float* pValue) noexcept;
+        VECTOR VEC_CALLCONV ReplicatePtr(_In_ const float* pValue) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the value passed
         /// </summary>
         /// <param name="value">Unsigned int to replicate</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorReplicateInt(uint32_t value) noexcept;
+        VECTOR VEC_CALLCONV ReplicateInt(uint32_t value) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the value passed by pointer
         /// </summary>
         /// <param name="pValue">Pointer to unsinged int to replicate</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorReplicateIntPtr(_In_ const uint32_t pValue) noexcept;
+        VECTOR VEC_CALLCONV ReplicateIntPtr(_In_ const uint32_t pValue) noexcept;
         /// <summary>
         /// Returns a vector with bits true (true mask)
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorTrueInt() noexcept;
+        VECTOR VEC_CALLCONV TrueInt() noexcept;
         /// <summary>
         /// Returns a vector with all bits clear (false mask)
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorFalseInt() noexcept;
+        VECTOR VEC_CALLCONV FalseInt() noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the x component of the provided vector
         /// </summary>
         /// <param name="v">Vector to copy the x component from</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatX(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SplatX(A_VECTOR v) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the y component of the provided vector
         /// </summary>
         /// <param name="v">Vector to copy the y component from</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatY(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SplatY(A_VECTOR v) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the z component of the provided vector
         /// </summary>
         /// <param name="v">Vector to copy the z component from</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatZ(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SplatZ(A_VECTOR v) noexcept;
         /// <summary>
         /// Returns a vector with all elements replicating the w component of the provided vector
         /// </summary>
         /// <param name="v">Vector to copy the w component from</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatW(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SplatW(A_VECTOR v) noexcept;
         /// <summary>
         /// Returns a vector of 1.0f, 1.0f, 1.0f, 1.0f
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatOne() noexcept;
+        VECTOR VEC_CALLCONV SplatOne() noexcept;
         /// <summary>
         /// Returns a vector of INF, INF, INF, INF
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatInfinity() noexcept;
+        VECTOR VEC_CALLCONV SplatInfinity() noexcept;
         /// <summary>
         /// Returns a vector of Q_NAN, Q_NAN, Q_NAN, Q_NAN
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatQNaN() noexcept;
+        VECTOR VEC_CALLCONV SplatQNaN() noexcept;
         /// <summary>
         /// Returns a vector of 1.192092896e-7f, 1.192092896e-7f, 1.192092896e-7f, 1.192092896e-7f
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatEpsilon() noexcept;
+        VECTOR VEC_CALLCONV SplatEpsilon() noexcept;
         /// <summary>
         /// Returns a vector of -0.0f, -0.0f, -0.0f -0.0f
         /// </summary>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSplatSignMask() noexcept;
+        VECTOR VEC_CALLCONV SplatSignMask() noexcept;
 
         /// <summary>
         /// <para>Returns the float value at the given index in the provided vector</para>
@@ -409,31 +438,31 @@ namespace UltReality::Math
         /// <param name="v">Vector to get element value from</param>
         /// <param name="index">Index of element to get, 0 for X</param>
         /// <returns></returns>
-        float VEC_CALLCONV VectorGetByIndex(A_VECTOR v, size_t index) noexcept;
+        float VEC_CALLCONV GetByIndex(A_VECTOR v, size_t index) noexcept;
         /// <summary>
         /// Return the X component of the provided vector in a FPU register
         /// </summary>
         /// <param name="v">Vector to get X component from</param>
         /// <returns></returns>
-        float VEC_CALLCONV VectorGetX(A_VECTOR v) noexcept;
+        float VEC_CALLCONV GetX(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the Y component of the provided vector in a FPU register
         /// </summary>
         /// <param name="v">Vector to get Y component from</param>
         /// <returns></returns>
-        float VEC_CALLCONV VectorGetY(A_VECTOR v) noexcept;
+        float VEC_CALLCONV GetY(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the Z component of the provided vector in a FPU register
         /// </summary>
         /// <param name="v">Vector to get Z component from</param>
         /// <returns></returns>
-        float VEC_CALLCONV VectorGetZ(A_VECTOR v) noexcept;
+        float VEC_CALLCONV GetZ(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the W component of the provided vector in a FPU register
         /// </summary>
         /// <param name="v">Vector to get W component from</param>
         /// <returns></returns>
-        float VEC_CALLCONV VectorGetW(A_VECTOR v) noexcept;
+        float VEC_CALLCONV GetW(A_VECTOR v) noexcept;
 
         /// <summary>
         /// <para>Stores the float value at the given index in the provided vector into the memory address pointed to by the float pointer</para>
@@ -443,68 +472,68 @@ namespace UltReality::Math
         /// <param name="v">Vector to get component from</param>
         /// <param name="index">Index of component in vector to get, 0 for X</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetByIndexPtr(_Out_ float* f, _In_ A_VECTOR v, _In_ size_t index) noexcept;
+        void VEC_CALLCONV GetByIndexPtr(_Out_ float* f, _In_ A_VECTOR v, _In_ size_t index) noexcept;
         /// <summary>
         /// Store the X component of the provided vector into the address pointed to by the float pointer
         /// </summary>
         /// <param name="x">Float pointer to store X at</param>
         /// <param name="v">Vector to get X from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetXPtr(_Out_ float* x, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetXPtr(_Out_ float* x, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the Y component of the provided vector into the address pointed to by the float pointer
         /// </summary>
         /// <param name="y">Float pointer to store Y at</param>
         /// <param name="v">Vector to get Y from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetYPtr(_Out_ float* y, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetYPtr(_Out_ float* y, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the Z component of the provided vector into the address pointed to by the float pointer
         /// </summary>
         /// <param name="z">Float pointer to store Z at</param>
         /// <param name="v">Vector to get Z from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetZPtr(_Out_ float* z, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetZPtr(_Out_ float* z, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the W component of the provided vector into the address pointed to by the float pointer
         /// </summary>
         /// <param name="w">Float pointer to store W at</param>
         /// <param name="v">Vector to get W from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetWPtr(_Out_ float* w, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetWPtr(_Out_ float* w, _In_ A_VECTOR v) noexcept;
 
         /// <summary>
         /// <para>Returns an integer value from the provided vector at the index specified</para>
         /// <para>**It is not recommended to use this function as it is less performant that its specified component counterparts**</para>
         /// </summary>
-        /// <param name="v">The vector to get the element from</param>
+        /// <param name="v">VectorThe vector to get the element from</param>
         /// <param name="index">The index of the element to get, 0 for X</param>
         /// <returns></returns>
-        uint32_t VEC_CALLCONV VectorGetIntByIndex(A_VECTOR v, size_t index) noexcept;
+        uint32_t VEC_CALLCONV GetIntByIndex(A_VECTOR v, size_t index) noexcept;
         /// <summary>
         /// Return the X component of the provided vector in an integer register
         /// </summary>
         /// <param name="v">Vector to get X component from</param>
         /// <returns></returns>
-        uint32_t VEC_CALLCONV VectorGetIntX(A_VECTOR v) noexcept;
+        uint32_t VEC_CALLCONV GetIntX(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the Y component of the provided vector in an integer register
         /// </summary>
         /// <param name="v">Vector to get Y component from</param>
         /// <returns></returns>
-        uint32_t VEC_CALLCONV VectorGetIntY(A_VECTOR v) noexcept;
+        uint32_t VEC_CALLCONV GetIntY(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the Z component of the provided vector in an integer register
         /// </summary>
         /// <param name="v">Vector to get Z component from</param>
         /// <returns></returns>
-        uint32_t VEC_CALLCONV VectorGetIntZ(A_VECTOR v) noexcept;
+        uint32_t VEC_CALLCONV GetIntZ(A_VECTOR v) noexcept;
         /// <summary>
         /// Return the W component of the provided vector in an integer register
         /// </summary>
         /// <param name="v">Vector to get W component from</param>
         /// <returns></returns>
-        uint32_t VEC_CALLCONV VectorGetIntW(A_VECTOR v) noexcept;
+        uint32_t VEC_CALLCONV GetIntW(A_VECTOR v) noexcept;
 
         /// <summary>
         /// Store the element of the provided vector, indexed by index into a 32 bit integer location in memory
@@ -513,35 +542,35 @@ namespace UltReality::Math
         /// <param name="v">Vector to extract element from</param>
         /// <param name="index">Index of vector to extract, 0 for X</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetIntByIndexPtr(_Out_ uint32_t* i, _In_ A_VECTOR v, _In_ size_t index) noexcept;
+        void VEC_CALLCONV GetIntByIndexPtr(_Out_ uint32_t* i, _In_ A_VECTOR v, _In_ size_t index) noexcept;
         /// <summary>
         /// Store the X component of the provided vector into a 32 pit integer location in memory
         /// </summary>
         /// <param name="x">Integer pointer to store X into</param>
         /// <param name="v">Vector to extract X from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetIntXPtr(_Out_ uint32_t* x, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetIntXPtr(_Out_ uint32_t* x, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the Y component of the provided vector into a 32 pit integer location in memory
         /// </summary>
         /// <param name="y">Integer pointer to store Y into</param>
         /// <param name="v">Vector to extract Y from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetIntYPtr(_Out_ uint32_t* y, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetIntYPtr(_Out_ uint32_t* y, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the Z component of the provided vector into a 32 pit integer location in memory
         /// </summary>
         /// <param name="z">Integer pointer to store Z into</param>
         /// <param name="v">Vector to extract Z from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetIntZPtr(_Out_ uint32_t* z, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetIntZPtr(_Out_ uint32_t* z, _In_ A_VECTOR v) noexcept;
         /// <summary>
         /// Store the W component of the provided vector into a 32 pit integer location in memory
         /// </summary>
         /// <param name="w">Integer pointer to store W into</param>
         /// <param name="v">Vector to extract W from</param>
         /// <returns></returns>
-        void VEC_CALLCONV VectorGetIntWPtr(_Out_ uint32_t* w, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV GetIntWPtr(_Out_ uint32_t* w, _In_ A_VECTOR v) noexcept;
 
         /// <summary>
         /// Set a single indexed floating point component
@@ -550,35 +579,35 @@ namespace UltReality::Math
         /// <param name="f">Value to set specified index with</param>
         /// <param name="index">Index to set</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetByIndex(A_VECTOR v, float f, size_t index) noexcept;
+        VECTOR VEC_CALLCONV SetByIndex(A_VECTOR v, float f, size_t index) noexcept;
         /// <summary>
         /// Set the X component of a vector with the passed float value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the X component</param>
         /// <param name="x">Value to set X component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetX(A_VECTOR v, float x) noexcept;
+        VECTOR VEC_CALLCONV SetX(A_VECTOR v, float x) noexcept;
         /// <summary>
         /// Set the Y component of a vector with the passed float value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Y component</param>
         /// <param name="y">Value to set Y component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetY(A_VECTOR v, float y) noexcept;
+        VECTOR VEC_CALLCONV SetY(A_VECTOR v, float y) noexcept;
         /// <summary>
         /// Set the Z component of a vector with the passed float value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Z component</param>
         /// <param name="z">Value to set Z component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetZ(A_VECTOR v, float z) noexcept;
+        VECTOR VEC_CALLCONV SetZ(A_VECTOR v, float z) noexcept;
         /// <summary>
         /// Set the W component of a vector with the passed float value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the W component</param>
         /// <param name="w">Value to set W component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetW(A_VECTOR v, float w) noexcept;
+        VECTOR VEC_CALLCONV SetW(A_VECTOR v, float w) noexcept;
 
         /// <summary>
         /// Sets a single indexed component of a vector to a floating point value passed by pointer
@@ -587,35 +616,35 @@ namespace UltReality::Math
         /// <param name="f">Pointer to value to set indexed component to</param>
         /// <param name="index">Index of component to set, 0 for X</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetByIndexPtr(_In_ A_VECTOR v, _In_ const float* f, _In_ size_t index) noexcept;
+        VECTOR VEC_CALLCONV SetByIndexPtr(_In_ A_VECTOR v, _In_ const float* f, _In_ size_t index) noexcept;
         /// <summary>
         /// Sets the X component of a vector to a floating point value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the X component</param>
         /// <param name="x">Pointer to value to set the X component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetXPtr(_In_ A_VECTOR v, _In_ const float* x) noexcept;
+        VECTOR VEC_CALLCONV SetXPtr(_In_ A_VECTOR v, _In_ const float* x) noexcept;
         /// <summary>
         /// Sets the Y component of a vector to a floating point value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Y component</param>
         /// <param name="y">Pointer to value to set the Y component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetYPtr(_In_ A_VECTOR v, _In_ const float* y) noexcept;
+        VECTOR VEC_CALLCONV SetYPtr(_In_ A_VECTOR v, _In_ const float* y) noexcept;
         /// <summary>
         /// Sets the Z component of a vector to a floating point value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Z component</param>
         /// <param name="z">Pointer to value to set the Z component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetZPtr(_In_ A_VECTOR v, _In_ const float* z) noexcept;
+        VECTOR VEC_CALLCONV SetZPtr(_In_ A_VECTOR v, _In_ const float* z) noexcept;
         /// <summary>
         /// Sets the W component of a vector to a floating point value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the W component</param>
         /// <param name="w">Pointer to value to set the W component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetWPtr(_In_ A_VECTOR v, _In_ const float* w) noexcept;
+        VECTOR VEC_CALLCONV SetWPtr(_In_ A_VECTOR v, _In_ const float* w) noexcept;
 
         /// <summary>
         /// Set a single indexed integer component
@@ -624,35 +653,35 @@ namespace UltReality::Math
         /// <param name="i">Value to set specified index with</param>
         /// <param name="index">Index to set</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntByIndex(A_VECTOR v, uint32_t i, size_t index) noexcept;
+        VECTOR VEC_CALLCONV SetIntByIndex(A_VECTOR v, uint32_t i, size_t index) noexcept;
         /// <summary>
         /// Set the X component of a vector with the passed int value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the X component</param>
         /// <param name="x">Value to set X component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntX(A_VECTOR v, uint32_t x) noexcept;
+        VECTOR VEC_CALLCONV SetIntX(A_VECTOR v, uint32_t x) noexcept;
         /// <summary>
         /// Set the Y component of a vector with the passed int value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Y component</param>
         /// <param name="y">Value to set Y component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntY(A_VECTOR v, uint32_t y) noexcept;
+        VECTOR VEC_CALLCONV SetIntY(A_VECTOR v, uint32_t y) noexcept;
         /// <summary>
         /// Set the Z component of a vector with the passed int value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Z component</param>
         /// <param name="z">Value to set Z component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntZ(A_VECTOR v, uint32_t z) noexcept;
+        VECTOR VEC_CALLCONV SetIntZ(A_VECTOR v, uint32_t z) noexcept;
         /// <summary>
         /// Set the W component of a vector with the passed int value
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the W component</param>
         /// <param name="w">Value to set W component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntW(A_VECTOR v, uint32_t w) noexcept;
+        VECTOR VEC_CALLCONV SetIntW(A_VECTOR v, uint32_t w) noexcept;
 
         /// <summary>
         /// Set a single indexed integer component to the value passed by pointer
@@ -661,59 +690,59 @@ namespace UltReality::Math
         /// <param name="i">Pointer to value to set specified index with</param>
         /// <param name="index">Index to set</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntByIndexPtr(_In_ A_VECTOR v, _In_ const uint32_t* i, _In_ size_t index) noexcept;
+        VECTOR VEC_CALLCONV SetIntByIndexPtr(_In_ A_VECTOR v, _In_ const uint32_t* i, _In_ size_t index) noexcept;
         /// <summary>
         /// Set the X component of a vector with the value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the X component</param>
         /// <param name="x">Pointer to value to set X component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntXPtr(_In_ A_VECTOR v, _In_ const uint32_t* x) noexcept;
+        VECTOR VEC_CALLCONV SetIntXPtr(_In_ A_VECTOR v, _In_ const uint32_t* x) noexcept;
         /// <summary>
         /// Set the Y component of a vector with the value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Y component</param>
         /// <param name="y">Pointer to value to set Y component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntYPtr(_In_ A_VECTOR v, _In_ const uint32_t* y) noexcept;
+        VECTOR VEC_CALLCONV SetIntYPtr(_In_ A_VECTOR v, _In_ const uint32_t* y) noexcept;
         /// <summary>
         /// Set the Z component of a vector with the value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the Z component</param>
         /// <param name="z">Pointer to value to set Z component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntZPtr(_In_ A_VECTOR v, _In_ const uint32_t* z) noexcept;
+        VECTOR VEC_CALLCONV SetIntZPtr(_In_ A_VECTOR v, _In_ const uint32_t* z) noexcept;
         /// <summary>
         /// Set the W component of a vector with the value passed by pointer
         /// </summary>
         /// <param name="v">Vector to start from, returned vector will copy this vector in all the but the W component</param>
         /// <param name="w">Pointer to value to set W component to</param>
         /// <returns></returns>
-        VECTOR VEC_CALLCONV VectorSetIntWPtr(_In_ A_VECTOR v, _In_ const uint32_t* w) noexcept;
+        VECTOR VEC_CALLCONV SetIntWPtr(_In_ A_VECTOR v, _In_ const uint32_t* w) noexcept;
 
-        VECTOR VEC_CALLCONV VectorSwizzle(A_VECTOR v, uint32_t E0, uint32_t E1, uint32_t E2, uint32_t E3) noexcept;
-        VECTOR VEC_CALLCONV VectorPermute(A_VECTOR V1, A_VECTOR V2, uint32_t permuteX, uint32_t permuteY, uint32_t permuteZ, uint32_t permuteW) noexcept;
+        VECTOR VEC_CALLCONV Swizzle(A_VECTOR v, uint32_t E0, uint32_t E1, uint32_t E2, uint32_t E3) noexcept;
+        VECTOR VEC_CALLCONV Permute(A_VECTOR V1, A_VECTOR V2, uint32_t permuteX, uint32_t permuteY, uint32_t permuteZ, uint32_t permuteW) noexcept;
         /// <summary>
-        /// <para>Creates a control vector to be used in <seealso cref="VectorSelect"/></para>
+        /// <para>Creates a control vector to be used in <seealso cref="Select"/></para>
         /// <para>A value of zero for an index causes the corresponding component from the first vector to be selected, whereas a one causes the component from the second vector to be selected</para>
         /// </summary>
         /// <param name="vectorIndex0">Controls selection for the first component of the vectors involved in the selection operation</param>
         /// <param name="vectorIndex1">Controls selection for the second component of the vectors involved in the selection operation</param>
         /// <param name="vectorIndex2">Controls selection for the third component of the vectors involved in the selection operation</param>
         /// <param name="vectorIndex3">Controls selection for the fourth component of the vectors involved in the selection operation</param>
-        /// <returns>Control vector to be passed to <seealso cref="VectorSelect"/></returns>
-        VECTOR VEC_CALLCONV VectorSelectControl(uint32_t vectorIndex0, uint32_t vectorIndex1, uint32_t vectorIndex2, uint32_t vectorIndex3) noexcept;
-        VECTOR VEC_CALLCONV VectorSelect(A_VECTOR V1, A_VECTOR V2, A_VECTOR control) noexcept;
-        VECTOR VEC_CALLCONV VectorMergeXY(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorMergeZW(A_VECTOR V1, A_VECTOR V2) noexcept;
+        /// <returns>Control vector to be passed to <seealso cref="Select"/></returns>
+        VECTOR VEC_CALLCONV SelectControl(uint32_t vectorIndex0, uint32_t vectorIndex1, uint32_t vectorIndex2, uint32_t vectorIndex3) noexcept;
+        VECTOR VEC_CALLCONV Select(A_VECTOR V1, A_VECTOR V2, A_VECTOR control) noexcept;
+        VECTOR VEC_CALLCONV MergeXY(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV MergeZW(A_VECTOR V1, A_VECTOR V2) noexcept;
 
-        VECTOR VEC_CALLCONV VectorShiftLeft(A_VECTOR V1, A_VECTOR V2, uint32_t elements) noexcept;
-        VECTOR VEC_CALLCONV VectorRotateLeft(A_VECTOR v, uint32_t elements) noexcept;
-        VECTOR VEC_CALLCONV VectorRotateRight(A_VECTOR v, uint32_t elements) noexcept;
-        VECTOR VEC_CALLCONV VectorInsert(A_VECTOR vDestination, A_VECTOR vSource, uint32_t VSLeftRotateElements, uint32_t select0, uint32_t select1, uint32_t select2, uint32_t select3) noexcept;
+        VECTOR VEC_CALLCONV ShiftLeft(A_VECTOR V1, A_VECTOR V2, uint32_t elements) noexcept;
+        VECTOR VEC_CALLCONV RotateLeft(A_VECTOR v, uint32_t elements) noexcept;
+        VECTOR VEC_CALLCONV RotateRight(A_VECTOR v, uint32_t elements) noexcept;
+        VECTOR VEC_CALLCONV Insert(A_VECTOR vDestination, A_VECTOR vSource, uint32_t VSLeftRotateElements, uint32_t select0, uint32_t select1, uint32_t select2, uint32_t select3) noexcept;
 
-        VECTOR VEC_CALLCONV VectorEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorEqualR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Equal(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV EqualR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
         /// <summary>
         /// <para>Treating the components of the vectors as integers, compare them for equality</para>
         /// <para>This is useful for comparing control vectors and result vectors returned from other comparison operators</para>
@@ -721,40 +750,111 @@ namespace UltReality::Math
         /// <param name="V1">First integer vector to compare</param>
         /// <param name="V2">Second integer vector to compare</param>
         /// <returns>
-        /// <para>Vector whose components indicate which element pairs of the argument vectors are equal or not-equal</para>
+        /// <para> whose components indicate which element pairs of the argument vectors are equal or not-equal</para>
         /// <para>Equal component pairs indicated with value of 0xFFFFFFFF, not-equal with 0x00000000</para>
         /// </returns>
-        VECTOR VEC_CALLCONV VectorEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorEqualIntR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorNearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept;
-        VECTOR VEC_CALLCONV VectorNotEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorNotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorGreater(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorGreaterR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorGreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorGreaterOrEqualR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorLess(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorLessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorInBounds(A_VECTOR v, A_VECTOR bounds) noexcept;
-        VECTOR VEC_CALLCONV VectorInBoundsR(_Out_ uint32_t* pCR, _In_ A_VECTOR v, _In_ A_VECTOR bounds) noexcept;
+        VECTOR VEC_CALLCONV EqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV EqualIntR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV NearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept;
+        VECTOR VEC_CALLCONV NotEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV NotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Greater(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV GreaterR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV GreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV GreaterOrEqualR(_Out_ uint32_t* pCR, _In_ A_VECTOR V1, _In_ A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Less(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV LessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV InBounds(A_VECTOR v, A_VECTOR bounds) noexcept;
+        VECTOR VEC_CALLCONV InBoundsR(_Out_ uint32_t* pCR, _In_ A_VECTOR v, _In_ A_VECTOR bounds) noexcept;
 
-        VECTOR VEC_CALLCONV VectorIsNaN(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV VectorIsInfinite(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV IsNaN(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV IsInfinite(A_VECTOR v) noexcept;
 
-        VECTOR VEC_CALLCONV VectorMin(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorMax(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorRound(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV VectorTruncate(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV VectorFloor(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV VectorCeiling(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV VectorClamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept;
-        VECTOR VEC_CALLCONV VectorSaturate(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Min(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Max(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Round(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Truncate(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Floor(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Ceiling(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Clamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept;
+        VECTOR VEC_CALLCONV Saturate(A_VECTOR v) noexcept;
 
-        VECTOR VEC_CALLCONV VectorAndInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorAndCInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorOrInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorNorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
-        VECTOR VEC_CALLCONV VectorXorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV AndInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV AndCInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV OrInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV NorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV XorInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+
+        VECTOR VEC_CALLCONV Negate(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Add(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Sum(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV AddAngles(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Subtract(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV SubtractAngles(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Multiply(A_VECTOR V1, A_VECTOR V2) noexcept;
+        /// <summary>
+        /// Multiply the first two vectors and add the third to that product
+        /// </summary>
+        /// <param name="V1">First of two vectors to be multiplied</param>
+        /// <param name="V2">Second of two vectors to be multiplied</param>
+        /// <param name="V3">Third vector to add to the product</param>
+        /// <returns>Vector calculated from expression V1 * V2 + V3</returns>
+        VECTOR VEC_CALLCONV MultiplyAdd(A_VECTOR V1, A_VECTOR V2, A_VECTOR V3) noexcept;
+        VECTOR VEC_CALLCONV Divide(A_VECTOR V1, A_VECTOR V2) noexcept;
+        /// <summary>
+        /// Multiply the first two vectors and subtract that product from the third
+        /// </summary>
+        /// <param name="V1">First of two vectors to be multiplied</param>
+        /// <param name="V2">Second of two vectors to be multiplied</param>
+        /// <param name="V3">Third vector to subtract the product of the first two from</param>
+        /// <returns>Vector calculated from expression V3 - V1 * V2</returns>
+        VECTOR VEC_CALLCONV NegativeMultiplySubtract(A_VECTOR V1, A_VECTOR V2, A_VECTOR V3) noexcept;
+        VECTOR VEC_CALLCONV Scale(A_VECTOR v, float scaleFactor) noexcept;
+        VECTOR VEC_CALLCONV ReciprocalEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Reciprocal(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SqrtEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Sqrt(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ReciprocalSrtEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ReciprocalSqrt(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Exp2(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Exp10(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ExpE(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Exp(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Log2(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Log10(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV LogE(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Log(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Pow(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV Abs(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Mod(A_VECTOR V1, A_VECTOR V2) noexcept;
+        VECTOR VEC_CALLCONV ModAngles(A_VECTOR angles) noexcept;
+        VECTOR VEC_CALLCONV Sine(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SineEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Cos(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV CosEst(A_VECTOR v) noexcept;
+        void VEC_CALLCONV SineCos(_Out_ VECTOR* pSine, _Out_ VECTOR* pCos, _In_ A_VECTOR v) noexcept;
+        void VEC_CALLCONV SineCosEst(_Out_ VECTOR* pSine, _Out_ VECTOR* pCos, _In_ A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV Tan(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV TanEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV SineH(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV CosH(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV TanH(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ASine(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ASineEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ACos(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ACosEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ATan(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ATanEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ATan2(A_VECTOR y, A_VECTOR x) noexcept;
+        VECTOR VEC_CALLCONV ATan2Est(A_VECTOR y, A_VECTOR x) noexcept;
+        VECTOR VEC_CALLCONV Lerp(A_VECTOR V1, A_VECTOR V2, float t) noexcept;
+        VECTOR VEC_CALLCONV LerpV(A_VECTOR V1, A_VECTOR V2, A_VECTOR VT) noexcept;
+        VECTOR VEC_CALLCONV Hermite(A_VECTOR postion1, A_VECTOR tangent1, A_VECTOR postion2, B_VECTOR tangent2, float t) noexcept;
+        VECTOR VEC_CALLCONV HermiteV(A_VECTOR postion1, A_VECTOR tangent1, A_VECTOR position2, B_VECTOR tangent2, C_VECTOR VT) noexcept;
+        VECTOR VEC_CALLCONV CatmullRom(A_VECTOR position1, A_VECTOR position2, A_VECTOR position3, B_VECTOR postion4, float t) noexcept;
+        VECTOR VEC_CALLCONV CatmullRomV(A_VECTOR postion1, A_VECTOR position2, A_VECTOR position3, B_VECTOR position4, C_VECTOR VT) noexcept;
+        VECTOR VEC_CALLCONV BaryCentric(A_VECTOR postion1, A_VECTOR postion2, A_VECTOR postion3, float f, float g) noexcept;
+        VECTOR VEC_CALLCONV BaryCentricV(A_VECTOR position1, A_VECTOR postion2, A_VECTOR postion3, B_VECTOR VF, C_VECTOR VG) noexcept;
 	}
 
 	// The purpose of the following global constants is to prevent redundant

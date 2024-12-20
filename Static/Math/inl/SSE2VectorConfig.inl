@@ -118,80 +118,80 @@ namespace UltReality::Math
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator- (A_VECTOR v) noexcept
 	{
-		return VEC::VectorNegate(v);
+		return VEC::Negate(v);
 	}
 
 	FORCE_INLINE VECTOR& VEC_CALLCONV operator+= (VECTOR& v1, A_VECTOR v2) noexcept
 	{
-		v1 = VEC::VectorAdd(v1, v2);
+		v1 = VEC::Add(v1, v2);
 		return v1;
 	}
 
 	FORCE_INLINE VECTOR& VEC_CALLCONV operator-= (VECTOR& v1, A_VECTOR v2) noexcept
 	{
-		v1 = VEC::VectorSubtract(v1, v2);
+		v1 = VEC::Subtract(v1, v2);
 		return v1;
 	}
 
 	FORCE_INLINE VECTOR& VEC_CALLCONV operator*= (VECTOR& v1, A_VECTOR v2) noexcept
 	{
-		v1 = VEC::VectorMultiply(v1, v2);
+		v1 = VEC::Multiply(v1, v2);
 		return v1;
 	}
 
 	FORCE_INLINE VECTOR& VEC_CALLCONV operator/= (VECTOR& v1, A_VECTOR v2) noexcept
 	{
-		v1 = VEC::VectorDivide(v1, v2);
+		v1 = VEC::Divide(v1, v2);
 		return v1;
 	}
 
 	FORCE_INLINE VECTOR& operator*= (VECTOR& v, const float s) noexcept
 	{
-		v = VEC::VectorScale(v, s);
+		v = VEC::Scale(v, s);
 		return v;
 	}
 
 	FORCE_INLINE VECTOR& operator/= (VECTOR& v, const float s) noexcept
 	{
-		VECTOR v_s = VEC::VectorReplicate(s);
-		v = VEC::VectorDivide(v, v_s);
+		VECTOR v_s = VEC::Replicate(s);
+		v = VEC::Divide(v, v_s);
 		return v;
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator+ (A_VECTOR v1, A_VECTOR v2) noexcept
 	{
-		return VEC::VectorAdd(v1, v2);
+		return VEC::Add(v1, v2);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator- (A_VECTOR v1, A_VECTOR v2) noexcept
 	{
-		return VEC::VectorSubtract(v1, v2);
+		return VEC::Subtract(v1, v2);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator* (A_VECTOR v1, A_VECTOR v2) noexcept
 	{
-		return VEC::VectorMultiply(v1, v2);
+		return VEC::Multiply(v1, v2);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator/ (A_VECTOR v1, A_VECTOR v2) noexcept
 	{
-		return VEC::VectorDivide(v1, v2);
+		return VEC::Divide(v1, v2);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator* (A_VECTOR v, const float s) noexcept
 	{
-		return VEC::VectorScale(v, s);
+		return VEC::Scale(v, s);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator/ (A_VECTOR v, const float s) noexcept
 	{
-		VECTOR v_s = VEC::VectorReplicate(s);
-		return VEC::VectorDivide(v, v_s);
+		VECTOR v_s = VEC::Replicate(s);
+		return VEC::Divide(v, v_s);
 	}
 
 	FORCE_INLINE VECTOR VEC_CALLCONV operator* (const float s, A_VECTOR v) noexcept
 	{
-		return VEC::VectorScale(v, s);
+		return VEC::Scale(v, s);
 	}
 #endif
 
@@ -655,7 +655,7 @@ namespace UltReality::Math
 #endif
 
 #if defined(_NO_INTRINSICS_)
-			*pDestination = VectorGetIntX(v);
+			*pDestination = GetIntX(v);
 
 #elif defined(_SSE2_INTRINSICS_)
 			_mm_store_ss(reinterpret_cast<float*>(pDestination), v);
@@ -670,7 +670,7 @@ namespace UltReality::Math
 #endif
 
 #if defined(_NO_INTRINSICS_)
-			*pDestination = VectorGetX(v);
+			*pDestination = GetX(v);
 
 #elif defined(_SSE2_INTRINSICS_)
 			_mm_store_ss(pDestination, v);
@@ -806,7 +806,7 @@ namespace UltReality::Math
 	V3 = _mm_shuffle_ps(V3, V4, _MM_SHUFFLE(2, 1, 2, 0))
 #endif
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorZero() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Zero() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult = { { { 0.0f, 0.0f, 0.0f, 0.0f } } };
@@ -817,7 +817,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSet(float x, float y, float z, float w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Set(float x, float y, float z, float w) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult = { { { x, y, z, w } } };
@@ -828,7 +828,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult = { { { x, y, z, w } } };
@@ -840,7 +840,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorReplicate(float value) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Replicate(float value) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -853,7 +853,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorReplicatePtr(const float* pValue) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV ReplicatePtr(const float* pValue) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -865,7 +865,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorReplicateInt(uint32_t value) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV ReplicateInt(uint32_t value) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -879,7 +879,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorReplicateIntPtr(const uint32_t* pValue) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV ReplicateIntPtr(const uint32_t* pValue) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -891,7 +891,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorTrueInt() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV TrueInt() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult = { { { 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU } } };
@@ -903,7 +903,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorFalseInt() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV FalseInt() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult = { { { 0.0f, 0.0f, 0.0f, 0.0f } } };
@@ -914,7 +914,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatX(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatX(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -926,7 +926,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatY(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatY(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -938,7 +938,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatZ(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatZ(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -950,7 +950,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatW(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatW(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -962,7 +962,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatOne() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatOne() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 vResult;
@@ -974,7 +974,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatInfinity() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatInfinity() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -986,7 +986,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatQNaN() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatQNaN() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -998,7 +998,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatEpsilon() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatEpsilon() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -1010,7 +1010,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSplatSignMask() noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SplatSignMask() noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 vResult;
@@ -1023,7 +1023,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE float VEC_CALLCONV VectorGetByIndex(A_VECTOR v, size_t index) noexcept
+		FORCE_INLINE float VEC_CALLCONV GetByIndex(A_VECTOR v, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(index < 4);
@@ -1040,7 +1040,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE float VEC_CALLCONV VectorGetX(A_VECTOR v) noexcept
+		FORCE_INLINE float VEC_CALLCONV GetX(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_f32[0];
@@ -1050,7 +1050,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE float VEC_CALLCONV VectorGetY(A_VECTOR v) noexcept
+		FORCE_INLINE float VEC_CALLCONV GetY(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_f32[1];
@@ -1061,7 +1061,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE float VEC_CALLCONV VectorGetZ(A_VECTOR v) noexcept
+		FORCE_INLINE float VEC_CALLCONV GetZ(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_f32[2];
@@ -1072,7 +1072,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE float VEC_CALLCONV VectorGetW(A_VECTOR v) noexcept
+		FORCE_INLINE float VEC_CALLCONV GetW(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_f32[3];
@@ -1084,7 +1084,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetByIndexPtr(float* f, A_VECTOR v, size_t index) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetByIndexPtr(float* f, A_VECTOR v, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(f != nullptr);
@@ -1103,7 +1103,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetXPtr(float* x, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetXPtr(float* x, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(x != nullptr);
@@ -1118,7 +1118,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetYPtr(float* y, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetYPtr(float* y, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(y != nullptr);
@@ -1137,7 +1137,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetZPtr(float* z, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetZPtr(float* z, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(z != nullptr);
@@ -1156,7 +1156,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetWPtr(float* w, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetWPtr(float* w, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(w != nullptr);
@@ -1174,7 +1174,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE uint32_t VEC_CALLCONV VectorGetIntByIndex(A_VECTOR v, size_t index) noexcept
+		FORCE_INLINE uint32_t VEC_CALLCONV GetIntByIndex(A_VECTOR v, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(index < 4);
@@ -1191,7 +1191,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE uint32_t VEC_CALLCONV VectorGetIntX(A_VECTOR v) noexcept
+		FORCE_INLINE uint32_t VEC_CALLCONV GetIntX(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[0];
@@ -1201,7 +1201,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE uint32_t VEC_CALLCONV VectorGetIntY(A_VECTOR v) noexcept
+		FORCE_INLINE uint32_t VEC_CALLCONV GetIntY(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[1];
@@ -1216,7 +1216,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE uint32_t VEC_CALLCONV VectorGetIntZ(A_VECTOR v) noexcept
+		FORCE_INLINE uint32_t VEC_CALLCONV GetIntZ(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[2];
@@ -1231,7 +1231,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE uint32_t VEC_CALLCONV VectorGetIntW(A_VECTOR v) noexcept
+		FORCE_INLINE uint32_t VEC_CALLCONV GetIntW(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			return v.vector4_u32[3];
@@ -1247,7 +1247,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetIntByIndexPtr(uint32_t* i, A_VECTOR v, size_t index) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetIntByIndexPtr(uint32_t* i, A_VECTOR v, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(i != nullptr);
@@ -1266,7 +1266,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetIntXPtr(uint32_t* x, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetIntXPtr(uint32_t* x, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(x != nullptr);
@@ -1281,7 +1281,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetIntYPtr(uint32_t* y, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetIntYPtr(uint32_t* y, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(y != nullptr);
@@ -1301,7 +1301,7 @@ namespace UltReality::Math
 		}
 		
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetIntZPtr(uint32_t* z, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetIntZPtr(uint32_t* z, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(z != nullptr);
@@ -1321,7 +1321,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE void VEC_CALLCONV VectorGetIntWPtr(uint32_t* w, A_VECTOR v) noexcept
+		FORCE_INLINE void VEC_CALLCONV GetIntWPtr(uint32_t* w, A_VECTOR v) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(w != nullptr);
@@ -1340,7 +1340,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetByIndex(A_VECTOR v, float f, size_t index) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetByIndex(A_VECTOR v, float f, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(index < 4);
@@ -1353,7 +1353,7 @@ namespace UltReality::Math
 			return U.v;
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetX(A_VECTOR v, float x) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetX(A_VECTOR v, float x) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 U = { { { x, v.vector4_f32[1], v.vector4_f32[2], v.vector_f32[3] } } };
@@ -1366,7 +1366,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetY(A_VECTOR v, float y) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetY(A_VECTOR v, float y) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 U = { { { v.vector4_f32[0], y, v.vector4_f32[2], v.vector_f32[3] } } };
@@ -1394,7 +1394,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetZ(A_VECTOR v, float z) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetZ(A_VECTOR v, float z) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 U = { { { v.vector4_f32[0], v.vector4_f32[1], z, v.vector_f32[3] } } };
@@ -1422,7 +1422,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetW(A_VECTOR v, float w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetW(A_VECTOR v, float w) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 U = { { { v.vector4_f32[0], v.vector4_f32[1], v.vector4_f32[2], w}}};
@@ -1451,7 +1451,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetByIndexPtr(A_VECTOR v, const float* f, size_t index) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetByIndexPtr(A_VECTOR v, const float* f, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(f != nullptr);
@@ -1466,7 +1466,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetXPtr(A_VECTOR v, const float* x) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetXPtr(A_VECTOR v, const float* x) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(x != nullptr);
@@ -1484,7 +1484,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetYPtr(A_VECTOR v, const float* y) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetYPtr(A_VECTOR v, const float* y) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(y != nullptr);
@@ -1512,7 +1512,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetZPtr(A_VECTOR v, const float* z) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetZPtr(A_VECTOR v, const float* z) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(z != nullptr);
@@ -1540,7 +1540,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetWPtr(A_VECTOR v, const float* w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetWPtr(A_VECTOR v, const float* w) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(w != nullptr);
@@ -1567,7 +1567,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntX(A_VECTOR v, uint32_t x) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntX(A_VECTOR v, uint32_t x) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 U = { { { x, v.vector4_u32[1], v.vector4_u32[2], v.vector_u32[3] } } };
@@ -1580,7 +1580,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntY(A_VECTOR v, uint32_t y) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntY(A_VECTOR v, uint32_t y) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 U = { { { v.vector4_u32[0], y, v.vector4_u32[2], v.vector_u32[3] } } };
@@ -1607,7 +1607,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntZ(A_VECTOR v, uint32_t z) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntZ(A_VECTOR v, uint32_t z) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 U = { { { v.vector4_u32[0], v.vector4_u32[1], z, v.vector_u32[3] } } };
@@ -1634,7 +1634,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntW(A_VECTOR v, uint32_t w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntW(A_VECTOR v, uint32_t w) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 U = { { { v.vector4_u32[0], v.vector4_u32[1], v.vector_u32[2], w } } };
@@ -1662,7 +1662,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntByIndexPtr(A_VECTOR v, const uint32_t* i, size_t index) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntByIndexPtr(A_VECTOR v, const uint32_t* i, size_t index) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(i != nullptr);
@@ -1677,7 +1677,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntXPtr(A_VECTOR v, const uint32_t* x) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntXPtr(A_VECTOR v, const uint32_t* x) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(x != nullptr);
@@ -1695,7 +1695,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntYPtr(A_VECTOR v, const uint32_t* y) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntYPtr(A_VECTOR v, const uint32_t* y) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(y != nullptr);
@@ -1722,7 +1722,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntZPtr(A_VECTOR v, const uint32_t* z) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntZPtr(A_VECTOR v, const uint32_t* z) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(z != nullptr);
@@ -1749,7 +1749,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSetIntWPtr(A_VECTOR v, const uint32_t* w) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SetIntWPtr(A_VECTOR v, const uint32_t* w) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(w != nullptr);
@@ -1775,7 +1775,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSwizzle(A_VECTOR v, uint32_t E0, uint32_t E1, uint32_t E2, uint32_t E3) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Swizzle(A_VECTOR v, uint32_t E0, uint32_t E1, uint32_t E2, uint32_t E3) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert((E0 < 4) && (E1 < 4) && (E2 < 4) && (E3 < 4));
@@ -1793,7 +1793,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorPermute(A_VECTOR V1, A_VECTOR V2, uint32_t permuteX, uint32_t permuteY, uint32_t permuteZ, uint32_t permuteW) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Permute(A_VECTOR V1, A_VECTOR V2, uint32_t permuteX, uint32_t permuteY, uint32_t permuteZ, uint32_t permuteW) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(permuteX <= 7 && permuteY <= 7 && permuteZ <= 7 && permuteW <= 7);
@@ -1845,7 +1845,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSelectControl(uint32_t vectorIndex0, uint32_t vectorIndex1, uint32_t vectorIndex2, uint32_t vectorIndex3) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV SelectControl(uint32_t vectorIndex0, uint32_t vectorIndex1, uint32_t vectorIndex2, uint32_t vectorIndex3) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(vectorIndex0 < 2);
@@ -1859,15 +1859,15 @@ namespace UltReality::Math
 #endif
 
 #if defined(_NO_INTRINSICS_)
-			VECTOR controlVector;
+			VECTOR control;
 			const uint32_t controlElement[] = { SELECT_NONE, SELECT_ALL };
 
-			controlVector.vector4_u32[0] = controlElement[vectorIndex0];
-			controlVector.vector4_u32[1] = controlElement[vectorIndex1];
-			controlVector.vector4_u32[2] = controlElement[vectorIndex2];
-			controlVector.vector4_u32[3] = controlElement[vectorIndex3];
+			control.vector4_u32[0] = controlElement[vectorIndex0];
+			control.vector4_u32[1] = controlElement[vectorIndex1];
+			control.vector4_u32[2] = controlElement[vectorIndex2];
+			control.vector4_u32[3] = controlElement[vectorIndex3];
 
-			return controlVector;
+			return control;
 
 #elif defined(_SSE2_INTRINSICS_)
 			// x = index0, y = index1, z = index2, w = index3
@@ -1880,7 +1880,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSelect(A_VECTOR V1, A_VECTOR V2, A_VECTOR control) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Select(A_VECTOR V1, A_VECTOR V2, A_VECTOR control) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 result = 
@@ -1901,7 +1901,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorMergeXY(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV MergeXY(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 result =
@@ -1919,7 +1919,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorMergeZW(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV MergeZW(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 result =
@@ -1937,47 +1937,47 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorShiftLeft(A_VECTOR V1, A_VECTOR V2, uint32_t elements) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV ShiftLeft(A_VECTOR V1, A_VECTOR V2, uint32_t elements) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(elements < 4);
 			_Analysis_assume_(elements < 4);
 #endif
 
-			return VectorPermute(V1, V2, elements, (elements + 1), (elements + 2), (elements + 3));
+			return Permute(V1, V2, elements, (elements + 1), (elements + 2), (elements + 3));
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorRotateLeft(A_VECTOR v, uint32_t elements) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV RotateLeft(A_VECTOR v, uint32_t elements) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(elements < 4);
 			_Analysis_assume_(elements < 4);
 #endif
 
-			return VectorSwizzle(v, elements & 3, (elements + 1) & 3, (elements + 2) & 3, (elements + 3) & 3);
+			return Swizzle(v, elements & 3, (elements + 1) & 3, (elements + 2) & 3, (elements + 3) & 3);
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorRotateRight(A_VECTOR v, uint32_t elements) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV RotateRight(A_VECTOR v, uint32_t elements) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(elements < 4);
 			_Analysis_assume_(elements < 4);
 #endif
 
-			return VectorSwizzle(v, (4 - elements) & 3, (5 - elements) & 3, (6 - elements) & 3, (7 - elements) & 3);
+			return Swizzle(v, (4 - elements) & 3, (5 - elements) & 3, (6 - elements) & 3, (7 - elements) & 3);
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorInsert(
+		FORCE_INLINE VECTOR VEC_CALLCONV Insert(
 			A_VECTOR vDestination,
 			A_VECTOR vSource,
 			uint32_t VSLeftRotateElements,
 			uint32_t select0, uint32_t select1, uint32_t select2, uint32_t select3) noexcept
 		{
-			VECTOR control = VectorSelectControl(select0 & 1, select1 & 1, select2 & 1, select3 & 1);
-			return VectorSelect(vDestination, VectorRotateLeft(vSource, VSLeftRotateElements), control);
+			VECTOR control = SelectControl(select0 & 1, select1 & 1, select2 & 1, select3 & 1);
+			return Select(vDestination, RotateLeft(vSource, VSLeftRotateElements), control);
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Equal(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -1995,7 +1995,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorEqualR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV EqualR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pCR != nullptr);
@@ -2039,7 +2039,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV EqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2058,21 +2058,21 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorEqualIntR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV EqualIntR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pCR != nullptr);
 #endif
 
 #if defined(_NO_INTRINSICS_)
-			VECTOR control = VectorEqualInt(V1, V2);
+			VECTOR control = EqualInt(V1, V2);
 
 			*pCR = 0;
-			if (Vector4EqualInt(control, VectorTrueInt())) // All elements are equal
+			if (4EqualInt(control, TrueInt())) // All elements are equal
 			{
 				*pCR |= CRMASK_CR6TRUE;
 			}
-			else if (Vector4EqualInt(control, VectorFalseInt())) // None of the elements are equal
+			else if (4EqualInt(control, FalseInt())) // None of the elements are equal
 			{
 				*pCR |= CRMASK_CR6FALSE;
 			}
@@ -2097,7 +2097,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorNearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV NearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			float deltaX = V1.vector4_f32[0] - V2.vector4_f32[0];
@@ -2133,7 +2133,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorNotEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV NotEqual(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2150,7 +2150,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorNotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV NotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2168,7 +2168,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreater(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Greater(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2186,7 +2186,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV GreaterR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pCR != nullptr);
@@ -2229,7 +2229,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV GreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2247,7 +2247,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorGreaterOrEqualR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV GreaterOrEqualR(uint32_t* pCR, A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pCR != nullptr);
@@ -2290,7 +2290,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorLess(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Less(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2307,7 +2307,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorLessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV LessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2324,7 +2324,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorInBounds(A_VECTOR v, A_VECTOR bounds) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV InBounds(A_VECTOR v, A_VECTOR bounds) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2352,7 +2352,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorInBoundsR(uint32_t* pCR, A_VECTOR v, A_VECTOR bounds) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV InBoundsR(uint32_t* pCR, A_VECTOR v, A_VECTOR bounds) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pCR != nullptr);
@@ -2402,7 +2402,7 @@ namespace UltReality::Math
 #pragma float_control(precise, on)
 #endif
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorIsNaN(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV IsNaN(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2438,7 +2438,7 @@ namespace UltReality::Math
 #pragma float_control(pop)
 #endif
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorIsInfinite(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV IsInfinite(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_U32 control = { { {
@@ -2461,7 +2461,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorMin(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Min(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 result = { { {
@@ -2478,7 +2478,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorMax(A_VECTOR V1, A_VECTOR V2) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Max(A_VECTOR V1, A_VECTOR V2) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 result = { { {
@@ -2521,7 +2521,7 @@ namespace UltReality::Math
 #pragma float_control(precise, on)
 #endif
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorRound(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Round(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 result = { { {
@@ -2555,7 +2555,7 @@ namespace UltReality::Math
 #pragma float_control(pop)
 #endif
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorTruncate(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Truncate(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR result;
@@ -2603,7 +2603,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorFloor(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Floor(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 result = { { {
@@ -2643,7 +2643,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorCeiling(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Ceiling(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR_F32 result = { { {
@@ -2683,16 +2683,16 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorClamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Clamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
-			assert(Vector4LessOrEqual(min, max));
+			//assert(Vector4LessOrEqual(min, max));
 #endif
 
 #if defined(_NO_INTRINSICS_)
-			VECTOR result = VectorMax(min, v);
+			VECTOR result = Max(min, v);
 			
-			return VectorMin(max, result);
+			return Min(max, result);
 
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vResult = _mm_max_ps(min, v);
@@ -2700,11 +2700,11 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV VectorSaturate(A_VECTOR v) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Saturate(A_VECTOR v) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
-			const VECTOR zero = VectorZero();
-			return VectorClamp(v, zero, g_One.v);
+			const VECTOR zero = Zero();
+			return Clamp(v, zero, g_One.v);
 
 #elif defined(_SSE2_INTRINSICS_)
 			// Set elements < 0 to 0
@@ -2713,6 +2713,665 @@ namespace UltReality::Math
 			// Set elements > 1 to 1
 			return _mm_min_ps(vResult, g_One);
 #endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV AndInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 result = { { {
+				V1.vector4_u32[0] & V2.vector4_u32[0],
+				V1.vector4_u32[1] & V2.vector4_u32[1],
+				V1.vector4_u32[2] & V2.vector4_u32[2],
+				V1.vector4_u32[3] & V2.vector4_u32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_and_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV AndCInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 result = { { {
+				V1.vector4_u32[0] & ~V2.vector4_u32[0],
+				V1.vector4_u32[1] & ~V2.vector4_u32[1],
+				V1.vector4_u32[2] & ~V2.vector4_u32[2],
+				V1.vector4_u32[3] & ~V2.vector4_u32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_andnot_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV OrInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 result = { { {
+				V1.vector4_u32[0] | V2.vector4_u32[0],
+				V1.vector4_u32[1] | V2.vector4_u32[1],
+				V1.vector4_u32[2] | V2.vector4_u32[2],
+				V1.vector4_u32[3] | V2.vector4_u32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_or_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV NorInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 result = { { {
+				~(V1.vector4_u32[0] | V2.vector4_u32[0]),
+				~(V1.vector4_u32[1] | V2.vector4_u32[1]),
+				~(V1.vector4_u32[2] | V2.vector4_u32[2]),
+				~(V1.vector4_u32[3] | V2.vector4_u32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_or_ps(V1, V2);
+			return _mm_andnot_ps(vResult, g_NegOneMask);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV XorInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_U32 result = { { {
+				V1.vector4_u32[0] ^ V2.vector4_u32[0],
+				V1.vector4_u32[1] ^ V2.vector4_u32[1],
+				V1.vector4_u32[2] ^ V2.vector4_u32[2],
+				V1.vector4_u32[3] ^ V2.vector4_u32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_xor_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Negate(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				-v.vector4_f32[0],
+				-v.vector4_f32[1],
+				-v.vector4_f32[2],
+				-v.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR z = _mm_setzero_ps();
+			return _mm_sub_ps(z, v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Add(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V1.vector4_f32[0] + V2.vector4_f32[0],
+				V1.vector4_f32[1] + V2.vector4_f32[1],
+				V1.vector4_f32[2] + V2.vector4_f32[2],
+				V1.vector4_f32[3] + V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_add_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Sum(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result;
+			result.f[0] =
+			result.f[1] =
+			result.f[2] =
+			result.f[3] = v.vector4_f32[0] + v.vector4_f32[1] + v.vector4_f32[2] + v.vector4_f32[3];
+
+			return result.v;
+
+#elif defined(_SSE3_INTRINSICS_)
+			VECTOR vTemp = _mm_hadd_ps(v, v);
+			return _mm_hadd_ps(vTemp, vTemp);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(2, 3, 0, 1));
+			VECTOR vTemp2 = _mm_add_ps(v, vTemp);
+			vTemp = PERMUTE_PS(vTemp2, _MM_SHUFFLE(1, 0, 3, 2));
+			return _mm_add_ps(vTemp, vTemp2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV AddAngles(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			const VECTOR zero = Zero();
+
+			VECTOR result = Add(V1, V2);
+
+			VECTOR mask = Less(result, g_NegativePi.v);
+			VECTOR offset = Select(offset, g_NegativeTwoPi.v, mask);
+
+			return Add(result, offset);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Adjust the angles
+			VECTOR vResult = _mm_and_ps(V1, V2);
+
+			// Determine which elements are less than Pi
+			VECTOR vOffset = _mm_cmplt_ps(vResult, g_NegativePi);
+			vOffset = _mm_and_ps(vOffset, g_TwoPi);
+
+			// Add 2Pi to all entries that are less than -Pi
+			vResult = _mm_add_ps(vResult, vOffset);
+
+			// Determine which elements are greater than or equal to Pi
+			vOffset = _mm_cmpge_ps(vResult, g_Pi);
+			vOffset = _mm_and_ps(vOffset, g_TwoPi);
+
+			// Subtract 2Pi from all entries that are greater than Pi and return the result
+			return _mm_sub_ps(vResult, vOffset);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Subtract(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V1.vector4_f32[0] - V2.vector4_f32[0],
+				V1.vector4_f32[1] - V2.vector4_f32[1],
+				V1.vector4_f32[2] - V2.vector4_f32[2],
+				V1.vector4_f32[3] - V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_sub_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV SubtractAngles(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			const VECTOR zero = Zero();
+
+			VECTOR result = Subtract(V1, V2);
+
+			VECTOR mask = Less(result, g_NegativePi.v);
+			VECTOR offset = Select(zero, g_TwoPi.v, mask);
+
+			mask = GreaterOrEqual(result, g_Pi.v);
+			offset = Select(offset, g_NegativeTwoPi.v, mask);
+
+			return Add(result, offset);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Adjust the angles
+			VECTOR vResult = _mm_sub_ps(V1, V2);
+
+			// Determine which elements are less than Pi
+			VECTOR vOffset = _mm_cmplt_ps(vResult, g_NegativePi);
+			vOffset = _mm_and_ps(vOffset, g_TwoPi);
+
+			// Add 2Pi to all entries that are less than -Pi
+			vResult = _mm_and_ps(vResult, vOffset);
+
+			// Determine which elements are greater than or equal to Pi
+			vOffset = _mm_cmpge_ps(vResult, g_Pi);
+			vOffset = _mm_and_ps(vOffset, g_TwoPi);
+
+			// Subtract 2Pi from all entries that are grater than Pi and return result
+			return _mm_sub_ps(vResult, vOffset);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Multiply(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V1.vector4_f32[0] * V2.vector4_f32[0],
+				V1.vector4_f32[1] * V2.vector4_f32[1],
+				V1.vector4_f32[2] * V2.vector4_f32[2],
+				V1.vector4_f32[3] * V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_mul_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV MultiplyAdd(A_VECTOR V1, A_VECTOR V2, A_VECTOR V3) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V1.vector4_f32[0] * V2.vector4_f32[0] + V3.vector4_f32[0],
+				V1.vector4_f32[1] * V2.vector4_f32[1] + V3.vector4_f32[1],
+				V1.vector4_f32[2] * V2.vector4_f32[2] + V3.vector4_f32[2],
+				V1.vector4_f32[3] * V2.vector4_f32[3] + V3.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			FMADD_PS(V1, V2, V3);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Divide(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V1.vector4_f32[0] / V2.vector4_f32[0],
+				V1.vector4_f32[1] / V2.vector4_f32[1],
+				V1.vector4_f32[2] / V2.vector4_f32[2],
+				V1.vector4_f32[3] / V2.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_div_ps(V1, V2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV NegativeMultiplySubtract(A_VECTOR V1, A_VECTOR V2, A_VECTOR V3) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				V3.vector4_f32[0] - (V1.vector4_f32[0] * V2.vector4_f32[0]),
+				V3.vector4_f32[1] - (V1.vector4_f32[1] * V2.vector4_f32[1]),
+				V3.vector4_f32[2] - (V1.vector4_f32[2] * V2.vector4_f32[2]),
+				V3.vector4_f32[3] - (V1.vector4_f32[3] * V2.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			FNMADD_PS(V1, V2, V3);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Scale(A_VECTOR v, float scaleFactor) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				v.vector4_f32[0] * scaleFactor,
+				v.vector4_f32[1] * scaleFactor,
+				v.vector4_f32[2] * scaleFactor,
+				v.vector4_f32[3] * scaleFactor
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_set_ps1(scaleFactor);
+			return _mm_mul_ps(vResult, v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ReciprocalEst(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				1.0f / v.vector4_f32[0],
+				1.0f / v.vector4_f32[1],
+				1.0f / v.vector4_f32[2],
+				1.0f / v.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_rcp_ps(v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Reciprocal(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				1.0f / v.vector4_f32[0],
+				1.0f / v.vector4_f32[1],
+				1.0f / v.vector4_f32[2],
+				1.0f / v.vector4_f32[3]
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_div_ps(g_One, v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV SqrtEst(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				sqrtf(v.vector4_f32[0]),
+				sqrtf(v.vector4_f32[1]),
+				sqrtf(v.vector4_f32[2]),
+				sqrtf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_sqrt_ps(v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Sqrt(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				sqrtf(v.vector4_f32[0]),
+				sqrtf(v.vector4_f32[1]),
+				sqrtf(v.vector4_f32[2]),
+				sqrtf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_sqrt_ps(v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ReciprocalSqrtEst(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				1.0f / sqrtf(v.vector4_f32[0]),
+				1.0f / sqrtf(v.vector4_f32[1]),
+				1.0f / sqrtf(v.vector4_f32[2]),
+				1.0f / sqrtf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			return _mm_rsqrt_ps(v);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ReciprocalSqrt(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				1.0f / sqrtf(v.vector4_f32[0]),
+				1.0f / sqrtf(v.vector4_f32[1]),
+				1.0f / sqrtf(v.vector4_f32[2]),
+				1.0f / sqrtf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_sqrt_ps(v);
+			return _mm_div_ps(g_One, vResult);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Exp2(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				exp2f(V.vector4_f32[0]),
+				exp2f(V.vector4_f32[1]),
+				exp2f(V.vector4_f32[2]),
+				exp2f(V.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_exp2_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTrunci = _mm_cvttps_epi32(v);
+			__m128 vTrunc = _mm_cvtepi32_ps(vTrunci);
+			__m128 vY = _mm_sub_ps(v, vTrunc);
+
+			__m128 vPoly = FMADD_PS(g_ExpEst7, vY, g_ExpEst6);
+			vPoly = FMADD_PS(vPoly, vY, g_ExpEst5);
+			vPoly = FMADD_PS(vPoly, vY, g_ExpEst4);
+			vPoly = FMADD_PS(vPoly, vY, g_ExpEst3);
+			vPoly = FMADD_PS(vPoly, vY, g_ExpEst2);
+			vPoly = FMADD_PS(vPoly, vY, g_ExpEst1);
+			vPoly = FMADD_PS(vPoly, vY, g_One);
+
+			__m128i vBiased = _mm_add_epi32(vTrunci, g_ExponentBias);
+			vBiased = _mm_slli_epi32(vBiased, 23);
+			__m128 vResult0 = _mm_div_ps(_mm_castsi128_ps(vBiased), vPoly);
+
+			vBiased = _mm_add_epi32(vTrunci, g_253);
+			vBiased = _mm_slli_epi32(vBiased, 23);
+			__m128 vResult1 = _mm_div_ps(_mm_castsi128_ps(vBiased), vPoly);
+			vResult1 = _mm_mul_ps(g_MinNormal.v, vResult1);
+
+			// Use selection to handle the cases
+			// if (v is NaN) -> QNaN;
+			// else if (v sign bit set)
+			//		if(v > -150)
+			//			if(v.exponent < -126) -> vResult1
+			//			else -> vResult0
+			//		else -> +0
+			// else
+			//		if(v < 128) -> vResult0
+			//		else -> +inf
+
+			__m128i vInputi = _mm_castps_si128(v);
+
+			__m128i vComp = _mm_cmplt_epi32(vInputi, g_Bin128);
+			__m128i vSelect0 = _mm_and_si128(vComp, _mm_castps_si128(vResult0));
+			__m128i vSelect1 = _mm_andnot_si128(vComp, g_Infinity);
+			__m128i vResult2 = _mm_or_si128(vSelect0, vSelect1);
+
+			vComp = _mm_cmplt_epi32(vTrunci, g_SubnormalExponent);
+			vSelect1 = _mm_and_si128(vComp, _mm_castps_si128(vResult1));
+			vSelect0 = _mm_andnot_si128(vComp, _mm_castps_si128(vResult0));
+			__m128i vResult3 = _mm_or_si128(vSelect0, vSelect1);
+
+			vComp = _mm_cmplt_epi32(vInputi, g_BinNeg150);
+			vSelect0 = _mm_and_si128(vComp, vResult3);
+			vSelect1 = _mm_andnot_si128(vComp, g_Zero);
+			__m128i vResult4 = _mm_or_si128(vSelect0, vSelect1);
+
+			__m128i vSign = _mm_and_si128(vInputi, g_NegativeZero);
+			vComp = _mm_cmpeq_epi32(vSign, g_NegativeZero);
+			vSelect0 = _mm_and_si128(vComp, vResult4);
+			vSelect1 = _mm_andnot_si128(vComp, vResult2);
+			__m128i vResult5 = _mm_or_si128(vSelect0, vSelect1);
+
+			__m128i vT0 = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i vT1 = _mm_and_si128(vInputi, g_Infinity);
+			vT0 = _mm_cmpeq_epi32(vT0, g_Zero);
+			vT1 = _mm_cmpeq_epi32(vT1, g_Infinity);
+			__m128i vIsNaN = _mm_andnot_si128(vT0, vT1);
+
+			vSelect0 = _mm_and_si128(vIsNaN, g_QNaN);
+			vSelect1 = _mm_andnot_si128(vIsNaN, vResult5);
+			__m128i vResult = _mm_or_si128(vSelect0, vSelect1);
+
+			return _mm_castsi128_ps(vResult);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Exp10(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				powf(10.0f, v.vector4_f32[0]),
+				powf(10.0f, v.vector4_f32[1]),
+				powf(10.0f, v.vector4_f32[2]),
+				powf(10.0f, v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_exp10_ps(v);
+
+#else
+			VECTOR vTen = Multiply(g_Lg10, v);
+			return Exp2(vTen);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ExpE(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				expf(v.vector4_f32[0]),
+				expf(v.vector4_f32[1]),
+				expf(v.vector4_f32[2]),
+				expf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_exp_ps(v);
+
+#else
+			// exp(v) = exp2(vin*log2(e))
+			VECTOR vE = Multiply(g_LgE, v);
+			return Exp2(vE);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Exp(A_VECTOR v) noexcept
+		{
+			return Exp2(v);
+		}
+
+#if defined(_SSE2_INTRINSICS_)
+		namespace
+		{
+			FORCE_INLINE __m128i multi_sll_epi32(__m128i value, __m128i count) noexcept
+			{
+				__m128i v = _mm_shuffle_epi32(value, _MM_SHUFFLE(0, 0, 0, 0));
+				__m128i c = _mm_shuffle_epi32(count, _MM_SHUFFLE(0, 0, 0, 0));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r0 = _mm_sll_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(1, 1, 1, 1));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(1, 1, 1, 1));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r1 = _mm_sll_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(2, 2, 2, 2));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(2, 2, 2, 2));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r2 = _mm_sll_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(3, 3, 3, 3));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(3, 3, 3, 3));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r3 = _mm_sll_epi32(v, c);
+
+				// (r0,r0,r1,r1)
+				__m128 r01 = _mm_shuffle_ps(_mm_castsi128_ps(r0), _mm_castsi128_ps(r1), _MM_SHUFFLE(0, 0, 0, 0));
+				// (r2,r2,r3,r3)
+				__m128 r23 = _mm_shuffle_ps(_mm_castsi128_ps(r2), _mm_castsi128_ps(r3), _MM_SHUFFLE(0, 0, 0, 0));
+				// (r0,r1,r2,r3)
+				__m128 result = _mm_shuffle_ps(r01, r23, _MM_SHUFFLE(2, 0, 2, 0));
+				return _mm_castps_si128(result);
+			}
+
+			FORCE_INLINE __m128i multi_srl_epi32(__m128i value, __m128i count) noexcept
+			{
+				__m128i v = _mm_shuffle_epi32(value, _MM_SHUFFLE(0, 0, 0, 0));
+				__m128i c = _mm_shuffle_epi32(count, _MM_SHUFFLE(0, 0, 0, 0));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r0 = _mm_srl_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(1, 1, 1, 1));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(1, 1, 1, 1));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r1 = _mm_srl_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(2, 2, 2, 2));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(2, 2, 2, 2));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r2 = _mm_srl_epi32(v, c);
+
+				v = _mm_shuffle_epi32(value, _MM_SHUFFLE(3, 3, 3, 3));
+				c = _mm_shuffle_epi32(count, _MM_SHUFFLE(3, 3, 3, 3));
+				c = _mm_and_si128(c, g_MaskX);
+				__m128i r3 = _mm_srl_epi32(v, c);
+
+				// (r0,r0,r1,r1)
+				__m128 r01 = _mm_shuffle_ps(_mm_castsi128_ps(r0), _mm_castsi128_ps(r1), _MM_SHUFFLE(0, 0, 0, 0));
+				// (r2,r2,r3,r3)
+				__m128 r23 = _mm_shuffle_ps(_mm_castsi128_ps(r2), _mm_castsi128_ps(r3), _MM_SHUFFLE(0, 0, 0, 0));
+				// (r0,r1,r2,r3)
+				__m128 result = _mm_shuffle_ps(r01, r23, _MM_SHUFFLE(2, 0, 2, 0));
+				return _mm_castps_si128(result);
+			}
+
+			FORCE_INLINE __m128i GetLeadingBit(const __m128i value) noexcept
+			{
+				static const VECTOR_I32 g_XM0000FFFF = { { { 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF } } };
+				static const VECTOR_I32 g_XM000000FF = { { { 0x000000FF, 0x000000FF, 0x000000FF, 0x000000FF } } };
+				static const VECTOR_I32 g_XM0000000F = { { { 0x0000000F, 0x0000000F, 0x0000000F, 0x0000000F } } };
+				static const VECTOR_I32 g_XM00000003 = { { { 0x00000003, 0x00000003, 0x00000003, 0x00000003 } } };
+
+				__m128i v = value, r, c, b, s;
+
+				c = _mm_cmpgt_epi32(v, g_XM0000FFFF);   // c = (v > 0xFFFF)
+				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
+				r = _mm_slli_epi32(b, 4);               // r = (b << 4)
+				v = multi_srl_epi32(v, r);              // v = (v >> r)
+
+				c = _mm_cmpgt_epi32(v, g_XM000000FF);   // c = (v > 0xFF)
+				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
+				s = _mm_slli_epi32(b, 3);               // s = (b << 3)
+				v = multi_srl_epi32(v, s);              // v = (v >> s)
+				r = _mm_or_si128(r, s);                 // r = (r | s)
+
+				c = _mm_cmpgt_epi32(v, g_XM0000000F);   // c = (v > 0xF)
+				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
+				s = _mm_slli_epi32(b, 2);               // s = (b << 2)
+				v = multi_srl_epi32(v, s);              // v = (v >> s)
+				r = _mm_or_si128(r, s);                 // r = (r | s)
+
+				c = _mm_cmpgt_epi32(v, g_XM00000003);   // c = (v > 0x3)
+				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
+				s = _mm_slli_epi32(b, 1);               // s = (b << 1)
+				v = multi_srl_epi32(v, s);              // v = (v >> s)
+				r = _mm_or_si128(r, s);                 // r = (r | s)
+
+				s = _mm_srli_epi32(v, 1);
+				r = _mm_or_si128(r, s);
+				return r;
+			}
+		}
+#endif // _SSE2_INTRINSICS_
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Log2(A_VECTOR v) noexcept
+		{
+
 		}
 
 #ifdef __clang__
