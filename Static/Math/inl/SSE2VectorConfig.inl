@@ -3371,7 +3371,1509 @@ namespace UltReality::Math
 
 		FORCE_INLINE VECTOR VEC_CALLCONV Log2(A_VECTOR v) noexcept
 		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				log2f(v.vector4_f32[0]),
+				log2f(v.vector4_f32[1]),
+				log2f(v.vector4_f32[2]),
+				log2f(v.vector4_f32[3])
+			} } };
 
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_log2_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vInputi = _mm_castps_si128(v);
+
+			__m128i rawBiased = _mm_and_si128(vInputi, g_Infinity);
+			__m128i trailing = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i isExponentZero = _mm_cmpeq_epi32(g_Zero, rawBiased);
+
+			// Compute exponent and significand for normals.
+			__m128i biased = _mm_srli_epi32(rawBiased, 23);
+			__m128i exponentNor = _mm_sub_epi32(biased, g_ExponentBias);
+			__m128i trailingNor = trailing;
+
+			// Compute exponent and significand for subnormals.
+			__m128i leading = GetLeadingBit(trailing);
+			__m128i shift = _mm_sub_epi32(g_NumTrailing, leading);
+			__m128i exponentSub = _mm_sub_epi32(g_SubnormalExponent, shift);
+			__m128i trailingSub = multi_sll_epi32(trailing, shift);
+			trailingSub = _mm_and_si128(trailingSub, g_QNaNTest);
+
+			__m128i select0 = _mm_and_si128(isExponentZero, exponentSub);
+			__m128i select1 = _mm_andnot_si128(isExponentZero, exponentNor);
+			__m128i e = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isExponentZero, trailingSub);
+			select1 = _mm_andnot_si128(isExponentZero, trailingNor);
+			__m128i t = _mm_or_si128(select0, select1);
+
+			// Compute the approximation.
+			__m128i tmp = _mm_or_si128(g_One, t);
+			__m128 y = _mm_sub_ps(_mm_castsi128_ps(tmp), g_One);
+
+			__m128 log2 = FMADD_PS(g_LogEst7, y, g_LogEst6);
+			log2 = FMADD_PS(log2, y, g_LogEst5);
+			log2 = FMADD_PS(log2, y, g_LogEst4);
+			log2 = FMADD_PS(log2, y, g_LogEst3);
+			log2 = FMADD_PS(log2, y, g_LogEst2);
+			log2 = FMADD_PS(log2, y, g_LogEst1);
+			log2 = FMADD_PS(log2, y, g_LogEst0);
+			log2 = FMADD_PS(log2, y, _mm_cvtepi32_ps(e));
+
+			//  if (x is NaN) -> QNaN
+			//  else if (V is positive)
+			//      if (V is infinite) -> +inf
+			//      else -> log2(V)
+			//  else
+			//      if (V is zero) -> -inf
+			//      else -> -QNaN
+
+			__m128i isInfinite = _mm_and_si128(vInputi, g_AbsMask);
+			isInfinite = _mm_cmpeq_epi32(isInfinite, g_Infinity);
+
+			__m128i isGreaterZero = _mm_cmpgt_epi32(vInputi, g_Zero);
+			__m128i isNotFinite = _mm_cmpgt_epi32(vInputi, g_Infinity);
+			__m128i isPositive = _mm_andnot_si128(isNotFinite, isGreaterZero);
+
+			__m128i isZero = _mm_and_si128(vInputi, g_AbsMask);
+			isZero = _mm_cmpeq_epi32(isZero, g_Zero);
+
+			__m128i t0 = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i t1 = _mm_and_si128(vInputi, g_Infinity);
+			t0 = _mm_cmpeq_epi32(t0, g_Zero);
+			t1 = _mm_cmpeq_epi32(t1, g_Infinity);
+			__m128i isNaN = _mm_andnot_si128(t0, t1);
+
+			select0 = _mm_and_si128(isInfinite, g_Infinity);
+			select1 = _mm_andnot_si128(isInfinite, _mm_castps_si128(log2));
+			__m128i result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isZero, g_NegInfinity);
+			select1 = _mm_andnot_si128(isZero, g_NegQNaN);
+			tmp = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isPositive, result);
+			select1 = _mm_andnot_si128(isPositive, tmp);
+			result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isNaN, g_QNaN);
+			select1 = _mm_andnot_si128(isNaN, result);
+			result = _mm_or_si128(select0, select1);
+
+			return _mm_castsi128_ps(result);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Log10(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				log10f(v.vector4_f32[0]),
+				log10f(v.vector4_f32[1]),
+				log10f(v.vector4_f32[2]),
+				log10f(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_log10_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vInputi = _mm_castps_si128(v);
+
+			__m128i rawBiased = _mm_and_si128(vInputi, g_Infinity);
+			__m128i trailing = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i isExponentZero = _mm_cmpeq_epi32(g_Zero, rawBiased);
+
+			// Compute exponent and significand for normals.
+			__m128i biased = _mm_srli_epi32(rawBiased, 23);
+			__m128i exponentNor = _mm_sub_epi32(biased, g_ExponentBias);
+			__m128i trailingNor = trailing;
+
+			// Compute exponent and significand for subnormals.
+			__m128i leading = GetLeadingBit(trailing);
+			__m128i shift = _mm_sub_epi32(g_NumTrailing, leading);
+			__m128i exponentSub = _mm_sub_epi32(g_SubnormalExponent, shift);
+			__m128i trailingSub = multi_sll_epi32(trailing, shift);
+			trailingSub = _mm_and_si128(trailingSub, g_QNaNTest);
+
+			__m128i select0 = _mm_and_si128(isExponentZero, exponentSub);
+			__m128i select1 = _mm_andnot_si128(isExponentZero, exponentNor);
+			__m128i e = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isExponentZero, trailingSub);
+			select1 = _mm_andnot_si128(isExponentZero, trailingNor);
+			__m128i t = _mm_or_si128(select0, select1);
+
+			// Compute the approximation.
+			__m128i tmp = _mm_or_si128(g_One, t);
+			__m128 y = _mm_sub_ps(_mm_castsi128_ps(tmp), g_One);
+
+			__m128 log2 = FMADD_PS(g_LogEst7, y, g_LogEst6);
+			log2 = FMADD_PS(log2, y, g_LogEst5);
+			log2 = FMADD_PS(log2, y, g_LogEst4);
+			log2 = FMADD_PS(log2, y, g_LogEst3);
+			log2 = FMADD_PS(log2, y, g_LogEst2);
+			log2 = FMADD_PS(log2, y, g_LogEst1);
+			log2 = FMADD_PS(log2, y, g_LogEst0);
+			log2 = FMADD_PS(log2, y, _mm_cvtepi32_ps(e));
+
+			log2 = _mm_mul_ps(g_InvLg10, log2);
+
+			//  if (x is NaN) -> QNaN
+			//  else if (V is positive)
+			//      if (V is infinite) -> +inf
+			//      else -> log2(V)
+			//  else
+			//      if (V is zero) -> -inf
+			//      else -> -QNaN
+
+			__m128i isInfinite = _mm_and_si128(vInputi, g_AbsMask);
+			isInfinite = _mm_cmpeq_epi32(isInfinite, g_Infinity);
+
+			__m128i isGreaterZero = _mm_cmpgt_epi32(vInputi, g_Zero);
+			__m128i isNotFinite = _mm_cmpgt_epi32(vInputi, g_Infinity);
+			__m128i isPositive = _mm_andnot_si128(isNotFinite, isGreaterZero);
+
+			__m128i isZero = _mm_and_si128(vInputi, g_AbsMask);
+			isZero = _mm_cmpeq_epi32(isZero, g_Zero);
+
+			__m128i t0 = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i t1 = _mm_and_si128(vInputi, g_Infinity);
+			t0 = _mm_cmpeq_epi32(t0, g_Zero);
+			t1 = _mm_cmpeq_epi32(t1, g_Infinity);
+			__m128i isNaN = _mm_andnot_si128(t0, t1);
+
+			select0 = _mm_and_si128(isInfinite, g_Infinity);
+			select1 = _mm_andnot_si128(isInfinite, _mm_castps_si128(log2));
+			__m128i result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isZero, g_NegInfinity);
+			select1 = _mm_andnot_si128(isZero, g_NegQNaN);
+			tmp = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isPositive, result);
+			select1 = _mm_andnot_si128(isPositive, tmp);
+			result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isNaN, g_QNaN);
+			select1 = _mm_andnot_si128(isNaN, result);
+			result = _mm_or_si128(select0, select1);
+
+			return _mm_castsi128_ps(result);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV LogE(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				logf(v.vector4_f32[0]),
+				logf(v.vector4_f32[1]),
+				logf(v.vector4_f32[2]),
+				logf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_log_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vInputi = _mm_castps_si128(v);
+
+			__m128i rawBiased = _mm_and_si128(vInputi, g_Infinity);
+			__m128i trailing = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i isExponentZero = _mm_cmpeq_epi32(g_Zero, rawBiased);
+
+			// Compute exponent and significand for normals.
+			__m128i biased = _mm_srli_epi32(rawBiased, 23);
+			__m128i exponentNor = _mm_sub_epi32(biased, g_ExponentBias);
+			__m128i trailingNor = trailing;
+
+			// Compute exponent and significand for subnormals.
+			__m128i leading = GetLeadingBit(trailing);
+			__m128i shift = _mm_sub_epi32(g_NumTrailing, leading);
+			__m128i exponentSub = _mm_sub_epi32(g_SubnormalExponent, shift);
+			__m128i trailingSub = multi_sll_epi32(trailing, shift);
+			trailingSub = _mm_and_si128(trailingSub, g_QNaNTest);
+
+			__m128i select0 = _mm_and_si128(isExponentZero, exponentSub);
+			__m128i select1 = _mm_andnot_si128(isExponentZero, exponentNor);
+			__m128i e = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isExponentZero, trailingSub);
+			select1 = _mm_andnot_si128(isExponentZero, trailingNor);
+			__m128i t = _mm_or_si128(select0, select1);
+
+			// Compute the approximation.
+			__m128i tmp = _mm_or_si128(g_One, t);
+			__m128 y = _mm_sub_ps(_mm_castsi128_ps(tmp), g_One);
+
+			__m128 log2 = FMADD_PS(g_LogEst7, y, g_LogEst6);
+			log2 = FMADD_PS(log2, y, g_LogEst5);
+			log2 = FMADD_PS(log2, y, g_LogEst4);
+			log2 = FMADD_PS(log2, y, g_LogEst3);
+			log2 = FMADD_PS(log2, y, g_LogEst2);
+			log2 = FMADD_PS(log2, y, g_LogEst1);
+			log2 = FMADD_PS(log2, y, g_LogEst0);
+			log2 = FMADD_PS(log2, y, _mm_cvtepi32_ps(e));
+
+			log2 = _mm_mul_ps(g_InvLgE, log2);
+
+			//  if (x is NaN) -> QNaN
+			//  else if (V is positive)
+			//      if (V is infinite) -> +inf
+			//      else -> log2(V)
+			//  else
+			//      if (V is zero) -> -inf
+			//      else -> -QNaN
+
+			__m128i isInfinite = _mm_and_si128(vInputi, g_AbsMask);
+			isInfinite = _mm_cmpeq_epi32(isInfinite, g_Infinity);
+
+			__m128i isGreaterZero = _mm_cmpgt_epi32(vInputi, g_Zero);
+			__m128i isNotFinite = _mm_cmpgt_epi32(vInputi, g_Infinity);
+			__m128i isPositive = _mm_andnot_si128(isNotFinite, isGreaterZero);
+
+			__m128i isZero = _mm_and_si128(vInputi, g_AbsMask);
+			isZero = _mm_cmpeq_epi32(isZero, g_Zero);
+
+			__m128i t0 = _mm_and_si128(vInputi, g_QNaNTest);
+			__m128i t1 = _mm_and_si128(vInputi, g_Infinity);
+			t0 = _mm_cmpeq_epi32(t0, g_Zero);
+			t1 = _mm_cmpeq_epi32(t1, g_Infinity);
+			__m128i isNaN = _mm_andnot_si128(t0, t1);
+
+			select0 = _mm_and_si128(isInfinite, g_Infinity);
+			select1 = _mm_andnot_si128(isInfinite, _mm_castps_si128(log2));
+			__m128i result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isZero, g_NegInfinity);
+			select1 = _mm_andnot_si128(isZero, g_NegQNaN);
+			tmp = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isPositive, result);
+			select1 = _mm_andnot_si128(isPositive, tmp);
+			result = _mm_or_si128(select0, select1);
+
+			select0 = _mm_and_si128(isNaN, g_QNaN);
+			select1 = _mm_andnot_si128(isNaN, result);
+			result = _mm_or_si128(select0, select1);
+
+			return _mm_castsi128_ps(result);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Log(A_VECTOR v) noexcept
+		{
+			return Log2(v);
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Pow(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				powf(V1.vector4_f32[0], V2.vector4_f32[0]),
+				powf(V1.vector4_f32[1], V2.vector4_f32[1]),
+				powf(V1.vector4_f32[2], V2.vector4_f32[2]),
+				powf(V1.vector4_f32[3], V2.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_pow_ps(V1, V2);
+
+#elif defined(_SSE2_INTRINSICS_)
+			ALIGNED(16) float a[4];
+			ALIGNED(16) float b[4];
+			_mm_store_ps(a, V1);
+			_mm_store_ps(b, V2);
+			VECTOR vResult = _mm_setr_ps(
+				powf(a[0], b[0]),
+				powf(a[1], b[1]),
+				powf(a[2], b[2]),
+				powf(a[3], b[3])
+			);
+
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Abs(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				fabsf(v.vector4_f32[0]),
+				fabsf(v.vector4_f32[1]),
+				fabsf(v.vector4_f32[2]),
+				fabsf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_setzero_ps();
+			vResult = _mm_sub_ps(vResult, v);
+			vResult = _mm_max_ps(vResult, v);
+
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Mod(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+			// V1 % V2 = V1 - V2 * truncate(V1 / V2)
+
+#if defined(_NO_INTRINSICS_)
+			VECTOR quotient = Divide(V1, V2);
+			quotient = Truncate(quotient);
+			
+			return NegativeMultiplySubtract(V2, quotient, V1);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_div_ps(V1, V2);
+			vResult = Truncate(vResult);
+
+			return FNMADD_PS(vResult, V2, V1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ModAngles(A_VECTOR angles) noexcept
+		{
+			// Modulo the range of angles such that -Pi <= angles < Pi
+
+#if defined(_NO_INTRINSICS_)
+			VECTOR v = Multiply(angles, g_ReciprocalTwoPi.v);
+			v = Round(v);
+
+			return NegativeMultiplySubtract(g_TwoPi.v, v, angles);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = _mm_mul_ps(angles, g_ReciprocalTwoPi);
+			vResult = Round(vResult);
+
+			return FNMADD_PS(vResult, g_TwoPi, angles);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Sine(A_VECTOR v) noexcept
+		{
+			// 11-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				sinf(v.vector4_f32[0]),
+				sinf(v.vector4_f32[1]),
+				sinf(v.vector4_f32[2]),
+				sinf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_sin_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Force the value to within the bounds of pi
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2, pi/2] with sine(y) = sine(x)
+			__m128 sign = _mm_and_ps(v, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign); // pi when x >=0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x); // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR SC1 = g_SineCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(SC1, _MM_SHUFFLE(0, 0, 0, 0));
+
+			const VECTOR SC0 = g_SineCoefficients0;
+			__m128 vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(2, 2, 2, 2));
+			result = FMADD_PS(result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(1, 1, 1, 1));
+			result = FMADD_PS(result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(0, 0, 0, 0));
+			result = FMADD_PS(result, x2, vConstants);
+
+			result = FMADD_PS(result, x2, g_One);
+			
+			return _mm_mul_ps(result, x);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Cos(A_VECTOR v) noexcept
+		{
+			// 10-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				cosf(v.vector4_f32[0]),
+				cosf(v.vector4_f32[1]),
+				cosf(v.vector4_f32[2]),
+				cosf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_cos_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Map V to x in [-pi,pi].
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2,pi/2] with cos(y) = sign*cos(x).
+			VECTOR sign = _mm_and_ps(x, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign);  // pi when x >= 0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x);  // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, g_One);
+			select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			sign = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR CC1 = g_CosCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(CC1, _MM_SHUFFLE(0, 0, 0, 0));
+			const VECTOR CC0 = g_CosCoefficients0;
+			__m128 vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(2, 2, 2, 2));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			return _mm_mul_ps(Result, sign);
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE void VEC_CALLCONV SineCos(VECTOR* pSine, VECTOR* pCos, A_VECTOR v) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pSine != nullptr);
+			assert(pCos != nullptr);
+#endif
+
+			// 11/10-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 sine = { { {
+				sinf(v.vector4_f32[0]),
+				sinf(v.vector4_f32[1]),
+				sinf(v.vector4_f32[2]),
+				sinf(v.vector4_f32[3])
+			} } };
+
+			VECTOR_F32 cos = { { {
+				cosf(v.vector4_f32[0]),
+				cosf(v.vector4_f32[1]),
+				cosf(v.vector4_f32[2]),
+				cosf(v.vector4_f32[3])
+			} } };
+
+			*pSine = sine.v;
+			*pCos = cos.v;
+
+//#elif defined(_SVML_INTRINSICS_)
+			*pSine = _mm_sincos_ps(pCos, v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Force the value within the bounds of pi
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2,pi/2] with sin(y) = sin(x), cos(y) = sign*cos(x).
+			VECTOR sign = _mm_and_ps(x, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign);  // pi when x >= 0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x);  // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, g_One);
+			select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			sign = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation of sine
+			const VECTOR SC1 = g_SineCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(SC1, _MM_SHUFFLE(0, 0, 0, 0));
+			const VECTOR SC0 = g_SineCoefficients0;
+			__m128 vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(2, 2, 2, 2));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SC0, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			*pSine = _mm_mul_ps(Result, x);
+
+			// Compute polynomial approximation of cosine
+			const VECTOR CC1 = g_CosCoefficients1;
+			vConstantsB = PERMUTE_PS(CC1, _MM_SHUFFLE(0, 0, 0, 0));
+			const VECTOR CC0 = g_CosCoefficients0;
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(3, 3, 3, 3));
+			Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(2, 2, 2, 2));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CC0, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			*pCos = _mm_mul_ps(Result, sign);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Tan(A_VECTOR v) noexcept
+		{
+			// Cody and Waite algorithm to compute tangent
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				tanf(v.vector4_f32[0]),
+				tanf(v.vector4_f32[1]),
+				tanf(v.vector4_f32[2]),
+				tanf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_tan_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 TanCoefficients0 = { { { 1.0f, -4.667168334e-1f, 2.566383229e-2f, -3.118153191e-4f } } };
+			static const VECTOR_F32 TanCoefficients1 = { { { 4.981943399e-7f, -1.333835001e-1f, 3.424887824e-3f, -1.786170734e-5f } } };
+			static const VECTOR_F32 TanConstants = { { { 1.570796371f, 6.077100628e-11f, 0.000244140625f, 0.63661977228f /*2 / Pi*/ } } };
+			static const VECTOR_U32 Mask = { { { 0x1, 0x1, 0x1, 0x1 } } };
+
+			VECTOR TwoDivPi = SplatW(TanConstants.v);
+
+			VECTOR Zero = _mm_setzero_ps();
+
+			VECTOR C0 = SplatX(TanConstants.v);
+			VECTOR C1 = SplatY(TanConstants.v);
+			VECTOR Epsilon = SplatZ(TanConstants.v);
+
+			VECTOR VA = Multiply(v, TwoDivPi);
+
+			VA = Round(VA);
+
+			VECTOR VC = NegativeMultiplySubtract(VA, C0, v);
+
+			VECTOR VB = Abs(VA);
+
+			VC = NegativeMultiplySubtract(VA, C1, VC);
+
+			reinterpret_cast<__m128i*>(&VB)[0] = _mm_cvttps_epi32(VB);
+
+			VECTOR VC2 = Multiply(VC, VC);
+
+			VECTOR T7 = SplatW(TanCoefficients1.v);
+			VECTOR T6 = SplatZ(TanCoefficients1.v);
+			VECTOR T4 = SplatX(TanCoefficients1.v);
+			VECTOR T3 = SplatW(TanCoefficients0.v);
+			VECTOR T5 = SplatY(TanCoefficients1.v);
+			VECTOR T2 = SplatZ(TanCoefficients0.v);
+			VECTOR T1 = SplatY(TanCoefficients0.v);
+			VECTOR T0 = SplatX(TanCoefficients0.v);
+
+			VECTOR VBIsEven = AndInt(VB, Mask.v);
+			VBIsEven = EqualInt(VBIsEven, Zero);
+
+			VECTOR N = MultiplyAdd(VC2, T7, T6);
+			VECTOR D = MultiplyAdd(VC2, T4, T3);
+			N = MultiplyAdd(VC2, N, T5);
+			D = MultiplyAdd(VC2, D, T2);
+			N = Multiply(VC2, N);
+			D = MultiplyAdd(VC2, D, T1);
+			N = MultiplyAdd(VC, N, VC);
+			VECTOR VCNearZero = InBounds(VC, Epsilon);
+			D = MultiplyAdd(VC2, D, T0);
+
+			N = Select(N, VC, VCNearZero);
+			D = Select(D, g_One.v, VCNearZero);
+
+			VECTOR R0 = Negate(N);
+			VECTOR R1 = Divide(N, D);
+			R0 = Divide(D, R0);
+
+			VECTOR VIsZero = Equal(v, Zero);
+							 
+			VECTOR Result =  Select(R0, R1, VBIsEven);
+
+			return Select(Result, Zero, VIsZero);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV SineH(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				sinhf(v.vector4_f32[0]),
+				sinhf(v.vector4_f32[1]),
+				sinhf(v.vector4_f32[2]),
+				sinhf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_sinh_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 Scale = { { { 1.442695040888963f, 1.442695040888963f, 1.442695040888963f, 1.442695040888963f } } }; // 1.0f / ln(2.0f)
+
+			VECTOR V1 = FMADD_PS(v, Scale, g_NegativeOne);
+			VECTOR V2 = FNMADD_PS(v, Scale, g_NegativeOne);
+			VECTOR E1 = Exp(V1);
+			VECTOR E2 = Exp(V2);
+
+			return _mm_sub_ps(E1, E2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV CosH(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				coshf(v.vector4_f32[0]),
+				coshf(v.vector4_f32[1]),
+				coshf(v.vector4_f32[2]),
+				coshf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_cosh_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 Scale = { { { 1.442695040888963f, 1.442695040888963f, 1.442695040888963f, 1.442695040888963f } } }; // 1.0f / ln(2.0f)
+
+			VECTOR V1 = FMADD_PS(v, Scale.v, g_NegativeOne.v);
+			VECTOR V2 = FNMADD_PS(v, Scale.v, g_NegativeOne.v);
+			VECTOR E1 = Exp(V1);
+			VECTOR E2 = Exp(V2);
+			return _mm_add_ps(E1, E2);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV TanH(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				tanhf(v.vector4_f32[0]),
+				tanhf(v.vector4_f32[1]),
+				tanhf(v.vector4_f32[2]),
+				tanhf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_tanh_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 Scale = { { { 2.8853900817779268f, 2.8853900817779268f, 2.8853900817779268f, 2.8853900817779268f } } }; // 2.0f / ln(2.0f)
+
+			VECTOR E = _mm_mul_ps(v, Scale.v);
+			E = Exp(E);
+			E = FMADD_PS(E, g_OneHalf.v, g_OneHalf.v);
+			E = _mm_div_ps(g_One.v, E);
+			return _mm_sub_ps(g_One.v, E);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ASine(A_VECTOR v) noexcept
+		{
+			// 7-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				asinf(v.vector4_f32[0]),
+				asinf(v.vector4_f32[1]),
+				asinf(v.vector4_f32[2]),
+				asinf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_asin_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 nonnegative = _mm_cmpge_ps(v, g_Zero);
+			__m128 mvalue = _mm_sub_ps(g_Zero, v);
+			__m128 x = _mm_max_ps(v, mvalue);  // |V|
+
+			// Compute (1-|V|), clamp to zero to avoid sqrt of negative number.
+			__m128 oneMValue = _mm_sub_ps(g_One, x);
+			__m128 clampOneMValue = _mm_max_ps(g_Zero, oneMValue);
+			__m128 root = _mm_sqrt_ps(clampOneMValue);  // sqrt(1-|V|)
+
+			// Compute polynomial approximation
+			const VECTOR AC1 = g_ArcCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(AC1, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 t0 = FMADD_PS(vConstantsB, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			const VECTOR AC0 = g_ArcCoefficients0;
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(3, 3, 3, 3));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(2, 2, 2, 2));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+			t0 = _mm_mul_ps(t0, root);
+
+			__m128 t1 = _mm_sub_ps(g_Pi, t0);
+			t0 = _mm_and_ps(nonnegative, t0);
+			t1 = _mm_andnot_ps(nonnegative, t1);
+			t0 = _mm_or_ps(t0, t1);
+			
+			return _mm_sub_ps(g_HalfPi, t0);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ACos(A_VECTOR v) noexcept
+		{
+			// 7-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				acosf(v.vector4_f32[0]),
+				acosf(v.vector4_f32[1]),
+				acosf(v.vector4_f32[2]),
+				acosf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_acos_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 nonnegative = _mm_cmpge_ps(v, g_Zero);
+			__m128 mvalue = _mm_sub_ps(g_Zero, v);
+			__m128 x = _mm_max_ps(v, mvalue);  // |V|
+
+			// Compute (1-|V|), clamp to zero to avoid sqrt of negative number.
+			__m128 oneMValue = _mm_sub_ps(g_One, x);
+			__m128 clampOneMValue = _mm_max_ps(g_Zero, oneMValue);
+			__m128 root = _mm_sqrt_ps(clampOneMValue);  // sqrt(1-|V|)
+
+			// Compute polynomial approximation
+			const VECTOR AC1 = g_ArcCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(AC1, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 t0 = FMADD_PS(vConstantsB, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC1, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			const VECTOR AC0 = g_ArcCoefficients0;
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(3, 3, 3, 3));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(2, 2, 2, 2));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AC0, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+			t0 = _mm_mul_ps(t0, root);
+
+			__m128 t1 = _mm_sub_ps(g_Pi, t0);
+			t0 = _mm_and_ps(nonnegative, t0);
+			t1 = _mm_andnot_ps(nonnegative, t1);
+			
+			return _mm_or_ps(t0, t1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ATan(A_VECTOR v) noexcept
+		{
+			// 17-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				atanf(v.vector4_f32[0]),
+				atanf(v.vector4_f32[1]),
+				atanf(v.vector4_f32[2]),
+				atanf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_atan_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 absV = Abs(v);
+			__m128 invV = _mm_div_ps(g_One, v);
+			__m128 comp = _mm_cmpgt_ps(v, g_One);
+			__m128 select0 = _mm_and_ps(comp, g_One);
+			__m128 select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			__m128 sign = _mm_or_ps(select0, select1);
+			comp = _mm_cmple_ps(absV, g_One);
+			select0 = _mm_and_ps(comp, g_Zero);
+			select1 = _mm_andnot_ps(comp, sign);
+			sign = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, v);
+			select1 = _mm_andnot_ps(comp, invV);
+			__m128 x = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR TC1 = g_ATanCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(TC1, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(TC1, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(TC1, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(TC1, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			const VECTOR TC0 = g_ATanCoefficients0;
+			vConstants = PERMUTE_PS(TC0, _MM_SHUFFLE(3, 3, 3, 3));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(TC0, _MM_SHUFFLE(2, 2, 2, 2));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(TC0, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(TC0, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			Result = FMADD_PS(Result, x2, g_One);
+
+			Result = _mm_mul_ps(Result, x);
+			__m128 result1 = _mm_mul_ps(sign, g_HalfPi);
+			result1 = _mm_sub_ps(result1, Result);
+
+			comp = _mm_cmpeq_ps(sign, g_Zero);
+			select0 = _mm_and_ps(comp, Result);
+			select1 = _mm_andnot_ps(comp, result1);
+			
+			return _mm_or_ps(select0, select1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ATan2(A_VECTOR y, A_VECTOR x) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				atan2f(y.vector4_f32[0], x.vector4_f32[0]),
+				atan2f(y.vector4_f32[1], x.vector4_f32[1]),
+				atan2f(y.vector4_f32[2], x.vector4_f32[2]),
+				atan2f(y.vector4_f32[3], x.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_atan2_ps(y, x);
+
+#else
+			// Return the inverse tangent of Y / X in the range of -Pi to Pi with the following exceptions:
+
+			//     Y == 0 and X is Negative         -> Pi with the sign of Y
+			//     y == 0 and x is positive         -> 0 with the sign of y
+			//     Y != 0 and X == 0                -> Pi / 2 with the sign of Y
+			//     Y != 0 and X is Negative         -> atan(y/x) + (PI with the sign of Y)
+			//     X == -Infinity and Finite Y      -> Pi with the sign of Y
+			//     X == +Infinity and Finite Y      -> 0 with the sign of Y
+			//     Y == Infinity and X is Finite    -> Pi / 2 with the sign of Y
+			//     Y == Infinity and X == -Infinity -> 3Pi / 4 with the sign of Y
+			//     Y == Infinity and X == +Infinity -> Pi / 4 with the sign of Y
+
+			static const VECTOR_F32 ATan2Constants = { { { _PI, _PIOVER2, _PIOVER4, _PI * 3.0f / 4.0f } } };
+
+			VECTOR Zero = _mm_setzero_ps();
+			VECTOR ATanResultValid = TrueInt();
+
+			VECTOR Pi = SplatX(ATan2Constants);
+			VECTOR PiOverTwo = SplatY(ATan2Constants);
+			VECTOR PiOverFour = SplatZ(ATan2Constants);
+			VECTOR ThreePiOverFour = SplatW(ATan2Constants);
+
+			VECTOR YEqualsZero = Equal(y, Zero);
+			VECTOR XEqualsZero = Equal(x, Zero);
+			VECTOR XIsPositive = AndInt(x, g_NegativeZero.v);
+			XIsPositive = EqualInt(XIsPositive, Zero);
+			VECTOR YEqualsInfinity = IsInfinite(y);
+			VECTOR XEqualsInfinity = IsInfinite(x);
+
+			VECTOR YSign = AndInt(y, g_NegativeZero.v);
+			Pi = OrInt(Pi, YSign);
+			PiOverTwo = OrInt(PiOverTwo, YSign);
+			PiOverFour = OrInt(PiOverFour, YSign);
+			ThreePiOverFour = OrInt(ThreePiOverFour, YSign);
+
+			VECTOR R1 = Select(Pi, YSign, XIsPositive);
+			VECTOR R2 = Select(ATanResultValid, PiOverTwo, XEqualsZero);
+			VECTOR R3 = Select(R2, R1, YEqualsZero);
+			VECTOR R4 = Select(ThreePiOverFour, PiOverFour, XIsPositive);
+			VECTOR R5 = Select(PiOverTwo, R4, XEqualsInfinity);
+			VECTOR Result = Select(R3, R5, YEqualsInfinity);
+			ATanResultValid = EqualInt(Result, ATanResultValid);
+
+			VECTOR V = Divide(y, x);
+
+			VECTOR R0 = ATan(V);
+
+			R1 = Select(Pi, g_NegativeZero, XIsPositive);
+			R2 = Add(R0, R1);
+
+			return Select(Result, R2, ATanResultValid);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV SineEst(A_VECTOR v) noexcept
+		{
+			// 7-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				sinf(v.vector4_f32[0]),
+				sinf(v.vector4_f32[1]),
+				sinf(v.vector4_f32[2]),
+				sinf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_sin_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Force the value within the bounds of pi
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2,pi/2] with sin(y) = sin(x).
+			__m128 sign = _mm_and_ps(x, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign);  // pi when x >= 0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x);  // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR SEC = g_SineCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(SEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(SEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SEC, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			return _mm_mul_ps(Result, x);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV CosEst(A_VECTOR v) noexcept
+		{
+			// 6-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				cosf(v.vector4_f32[0]),
+				cosf(v.vector4_f32[1]),
+				cosf(v.vector4_f32[2]),
+				cosf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_cos_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Map V to x in [-pi,pi].
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2,pi/2] with cos(y) = sign*cos(x).
+			VECTOR sign = _mm_and_ps(x, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign);  // pi when x >= 0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x);  // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, g_One);
+			select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			sign = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR CEC = g_CosCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(CEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(CEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CEC, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			return _mm_mul_ps(Result, sign);
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE void VEC_CALLCONV SineCosEst(VECTOR* pSine, VECTOR* pCos, A_VECTOR v) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pSine != nullptr);
+			assert(pCos != nullptr);
+#endif
+
+			// 6/7-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 sine = { { {
+				sinf(v.vector4_f32[0]),
+				sinf(v.vector4_f32[1]),
+				sinf(v.vector4_f32[2]),
+				sinf(v.vector4_f32[3])
+			} } };
+
+			VECTOR_F32 cos = { { {
+				cosf(v.vector4_f32[0]),
+				cosf(v.vector4_f32[1]),
+				cosf(v.vector4_f32[2]),
+				cosf(v.vector4_f32[3])
+			} } };
+
+			*pSine = sine;
+			*pCos = cos;
+
+#elif defined(_SVML_INTRINSICS_)
+			*pSine = _mm_sincos_ps(pCos, v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			// Force the value within the bounds of pi
+			VECTOR x = ModAngles(v);
+
+			// Map in [-pi/2,pi/2] with sin(y) = sin(x), cos(y) = sign*cos(x).
+			VECTOR sign = _mm_and_ps(x, g_NegativeZero);
+			__m128 c = _mm_or_ps(g_Pi, sign);  // pi when x >= 0, -pi when x < 0
+			__m128 absx = _mm_andnot_ps(sign, x);  // |x|
+			__m128 rflx = _mm_sub_ps(c, x);
+			__m128 comp = _mm_cmple_ps(absx, g_HalfPi);
+			__m128 select0 = _mm_and_ps(comp, x);
+			__m128 select1 = _mm_andnot_ps(comp, rflx);
+			x = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, g_One);
+			select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			sign = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation for sine
+			const VECTOR SEC = g_SineCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(SEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(SEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(SEC, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			*pSine = _mm_mul_ps(Result, x);
+
+			// Compute polynomial approximation for cosine
+			const VECTOR CEC = g_CosCoefficients1;
+			vConstantsB = PERMUTE_PS(CEC, _MM_SHUFFLE(3, 3, 3, 3));
+			vConstants = PERMUTE_PS(CEC, _MM_SHUFFLE(2, 2, 2, 2));
+			Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(CEC, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+			Result = FMADD_PS(Result, x2, g_One);
+			
+			*pCos = _mm_mul_ps(Result, sign);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV TanEst(A_VECTOR v) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				tanf(v.vector4_f32[0]),
+				tanf(v.vector4_f32[1]),
+				tanf(v.vector4_f32[2]),
+				tanf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_tan_ps(v);
+
+#else
+			VECTOR OneOverPi = SplatW(g_TanEstCoefficients.v);
+
+			VECTOR V1 = Multiply(v, OneOverPi);
+			V1 = Round(V1);
+
+			V1 = NegativeMultiplySubtract(g_Pi.v, V1, V);
+
+			VECTOR T0 = SplatX(g_TanEstCoefficients.v);
+			VECTOR T1 = SplatY(g_TanEstCoefficients.v);
+			VECTOR T2 = SplatZ(g_TanEstCoefficients.v);
+
+			VECTOR V2T2 = NegativeMultiplySubtract(V1, V1, T2);
+			VECTOR V2 = Multiply(V1, V1);
+			VECTOR V1T0 = Multiply(V1, T0);
+			VECTOR V1T1 = Multiply(V1, T1);
+
+			VECTOR D = ReciprocalEst(V2T2);
+			VECTOR N = MultiplyAdd(V2, V1T1, V1T0);
+
+			return Multiply(N, D);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ASineEst(A_VECTOR v) noexcept
+		{
+			// 3-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				asinf(v.vector4_f32[0]),
+				asinf(v.vector4_f32[0]),
+				asinf(v.vector4_f32[0]),
+				asinf(v.vector4_f32[0])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_asin_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 nonnegative = _mm_cmpge_ps(v, g_Zero);
+			__m128 mvalue = _mm_sub_ps(g_Zero, v);
+			__m128 x = _mm_max_ps(v, mvalue);  // |V|
+
+			// Compute (1-|V|), clamp to zero to avoid sqrt of negative number.
+			__m128 oneMValue = _mm_sub_ps(g_One, x);
+			__m128 clampOneMValue = _mm_max_ps(g_Zero, oneMValue);
+			__m128 root = _mm_sqrt_ps(clampOneMValue);  // sqrt(1-|V|)
+
+			// Compute polynomial approximation
+			const VECTOR AEC = g_ArcEstCoefficients;
+			__m128 vConstantsB =PERMUTE_PS(AEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 t0 = FMADD_PS(vConstantsB, x, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+			t0 = _mm_mul_ps(t0, root);
+
+			__m128 t1 = _mm_sub_ps(g_Pi, t0);
+			t0 = _mm_and_ps(nonnegative, t0);
+			t1 = _mm_andnot_ps(nonnegative, t1);
+			t0 = _mm_or_ps(t0, t1);
+			t0 = _mm_sub_ps(g_HalfPi, t0);
+			return t0;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ACosEst(A_VECTOR v) noexcept
+		{
+			// 3-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				acosf(v.vector4_f32[0]),
+				acosf(v.vector4_f32[1]),
+				acosf(v.vector4_f32[2]),
+				acosf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_acos_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 nonnegative = _mm_cmpge_ps(v, g_Zero);
+			__m128 mvalue = _mm_sub_ps(g_Zero, v);
+			__m128 x = _mm_max_ps(v, mvalue);  // |V|
+
+			// Compute (1-|V|), clamp to zero to avoid sqrt of negative number.
+			__m128 oneMValue = _mm_sub_ps(g_One, x);
+			__m128 clampOneMValue = _mm_max_ps(g_Zero, oneMValue);
+			__m128 root = _mm_sqrt_ps(clampOneMValue);  // sqrt(1-|V|)
+
+			// Compute polynomial approximation
+			const VECTOR AEC = g_ArcEstCoefficients;
+			__m128 vConstantsB = PERMUTE_PS(AEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 t0 = FMADD_PS(vConstantsB, x, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(1, 1, 1, 1));
+			t0 = FMADD_PS(t0, x, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(0, 0, 0, 0));
+			t0 = FMADD_PS(t0, x, vConstants);
+			t0 = _mm_mul_ps(t0, root);
+
+			__m128 t1 = _mm_sub_ps(g_Pi, t0);
+			t0 = _mm_and_ps(nonnegative, t0);
+			t1 = _mm_andnot_ps(nonnegative, t1);
+			
+			return _mm_or_ps(t0, t1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ATanEst(A_VECTOR v) noexcept
+		{
+			// 9-degree minimax approximation
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				atanf(v.vector4_f32[0]),
+				atanf(v.vector4_f32[1]),
+				atanf(v.vector4_f32[2]),
+				atanf(v.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_atan_ps(v);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128 absV = Abs(v);
+			__m128 invV = _mm_div_ps(g_One, v);
+			__m128 comp = _mm_cmpgt_ps(v, g_One);
+			__m128 select0 = _mm_and_ps(comp, g_One);
+			__m128 select1 = _mm_andnot_ps(comp, g_NegativeOne);
+			__m128 sign = _mm_or_ps(select0, select1);
+			comp = _mm_cmple_ps(absV, g_One);
+			select0 = _mm_and_ps(comp, g_Zero);
+			select1 = _mm_andnot_ps(comp, sign);
+			sign = _mm_or_ps(select0, select1);
+			select0 = _mm_and_ps(comp, v);
+			select1 = _mm_andnot_ps(comp, invV);
+			__m128 x = _mm_or_ps(select0, select1);
+
+			__m128 x2 = _mm_mul_ps(x, x);
+
+			// Compute polynomial approximation
+			const VECTOR AEC = g_ATanEstCoefficients1;
+			__m128 vConstantsB = PERMUTE_PS(AEC, _MM_SHUFFLE(3, 3, 3, 3));
+			__m128 vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(2, 2, 2, 2));
+			__m128 Result = FMADD_PS(vConstantsB, x2, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(1, 1, 1, 1));
+			Result = FMADD_PS(Result, x2, vConstants);
+
+			vConstants = PERMUTE_PS(AEC, _MM_SHUFFLE(0, 0, 0, 0));
+			Result = FMADD_PS(Result, x2, vConstants);
+			// ATanEstCoefficients0 is already splatted
+			Result = FMADD_PS(Result, x2, g_ATanEstCoefficients0);
+			Result = _mm_mul_ps(Result, x);
+			__m128 result1 = _mm_mul_ps(sign, g_HalfPi);
+			result1 = _mm_sub_ps(result1, Result);
+
+			comp = _mm_cmpeq_ps(sign, g_Zero);
+			select0 = _mm_and_ps(comp, Result);
+			select1 = _mm_andnot_ps(comp, result1);
+			
+			return _mm_or_ps(select0, select1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV ATan2Est(A_VECTOR y, A_VECTOR x) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR_F32 result = { { {
+				atan2f(y.vector4_f32[0], x.vector4_f32[0]),
+				atan2f(y.vector4_f32[1], x.vector4_f32[1]),
+				atan2f(y.vector4_f32[2], x.vector4_f32[2]),
+				atan2f(y.vector4_f32[3], x.vector4_f32[3])
+			} } };
+
+			return result.v;
+
+#elif defined(_SVML_INTRINSICS_)
+			return _mm_atan2_ps(y, x);
+
+#else
+			static const VECTOR_F32 ATan2Constants = { { { _PI, _PIOVER2, _PIOVER4, 2.3561944905f /* Pi*3/4 */ } } };
+
+			const VECTOR Zero = _mm_setzero_ps();
+			VECTOR ATanResultValid = TrueInt();
+
+			VECTOR Pi = SplatX(ATan2Constants);
+			VECTOR PiOverTwo = SplatY(ATan2Constants);
+			VECTOR PiOverFour = SplatZ(ATan2Constants);
+			VECTOR ThreePiOverFour = SplatW(ATan2Constants);
+
+			VECTOR YEqualsZero = Equal(y, Zero);
+			VECTOR XEqualsZero = Equal(x, Zero);
+			VECTOR XIsPositive = AndInt(x, g_NegativeZero.v);
+			XIsPositive = EqualInt(XIsPositive, Zero);
+			VECTOR YEqualsInfinity = IsInfinite(y);
+			VECTOR XEqualsInfinity = IsInfinite(x);
+
+			VECTOR YSign = AndInt(y, g_NegativeZero.v);
+			Pi = OrInt(Pi, YSign);
+			PiOverTwo = OrInt(PiOverTwo, YSign);
+			PiOverFour = OrInt(PiOverFour, YSign);
+			ThreePiOverFour = OrInt(ThreePiOverFour, YSign);
+
+			VECTOR R1 = Select(Pi, YSign, XIsPositive);
+			VECTOR R2 = Select(ATanResultValid, PiOverTwo, XEqualsZero);
+			VECTOR R3 = Select(R2, R1, YEqualsZero);
+			VECTOR R4 = Select(ThreePiOverFour, PiOverFour, XIsPositive);
+			VECTOR R5 = Select(PiOverTwo, R4, XEqualsInfinity);
+			VECTOR Result = Select(R3, R5, YEqualsInfinity);
+			ATanResultValid = EqualInt(Result, ATanResultValid);
+
+			VECTOR Reciprocal = ReciprocalEst(x);
+			VECTOR V = Multiply(y, Reciprocal);
+			VECTOR R0 = ATanEst(V);
+
+			R1 = Select(Pi, g_NegativeZero, XIsPositive);
+			R2 = Add(R0, R1);
+
+			return Select(Result, R2, ATanResultValid);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Lerp(A_VECTOR V1, A_VECTOR V2, float t) noexcept
+		{
+			// V1 + t * (V2 - V1)
+#if defined(_NO_INTRINSICS_)
+			VECTOR scale = Replicate(t);
+			VECTOR length = Subtract(V2, V1);
+
+			return MultiplyAdd(length, scale, V1);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vLength = _mm_sub_ps(V2, V1);
+			VECTOR vScale = _mm_set_ps1(t);
+
+			return FMADD_PS(vLength, vScale, V1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV LerpV(A_VECTOR V1, A_VECTOR V2, A_VECTOR VT) noexcept
+		{
+			// V1 + VT * (V2 - V1)
+#if defined(_NO_INTRINSICS_)
+			VECTOR length = Subtract(V2, V1);
+			return MultiplyAdd(length, VT, V1);
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vLength = _mm_sub_ps(V2, V1);
+			return FMADD_PS(vLength, VT, V1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV Hermite(A_VECTOR position1, A_VECTOR tangent1, A_VECTOR position2, B_VECTOR tangent2, float t) noexcept
+		{
+			// Result = (2 * t^3 - 3 * t^2 + 1) * Position0 +
+			//          (t^3 - 2 * t^2 + t) * Tangent0 +
+			//          (-2 * t^3 + 3 * t^2) * Position1 +
+			//          (t^3 - t^2) * Tangent1
+#if defined(_NO_INTRINSICS_)
+			float t2 = t * t;
+			float t3 = t * t2;
+
+			VECTOR P0 = Replicate(2.0f * t3 - 3.0f * t2 + 1.0f);
+			VECTOR T0 = Replicate(t3 - 2.0f * t2 + t);
+			VECTOR P1 = Replicate(-2.0f * t3 + 3.0f * t2);
+			VECTOR T1 = Replicate(t3 - t2);
+
+			VECTOR Result = Multiply(P0, position1);
+			Result = MultiplyAdd(T0, tangent1, Result);
+			Result = MultiplyAdd(P1, position2, Result);
+			Result = MultiplyAdd(T1, tangent2, Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			float t2 = t * t;
+			float t3 = t * t2;
+
+			VECTOR P0 = _mm_set_ps1(2.0f * t3 - 3.0f * t2 + 1.0f);
+			VECTOR T0 = _mm_set_ps1(t3 - 2.0f * t2 + t);
+			VECTOR P1 = _mm_set_ps1(-2.0f * t3 + 3.0f * t2);
+			VECTOR T1 = _mm_set_ps1(t3 - t2);
+
+			VECTOR vResult = _mm_mul_ps(P0, position1);
+			vResult = FMADD_PS(tangent1, T0, vResult);
+			vResult = FMADD_PS(position2, P1, vResult);
+			vResult = FMADD_PS(tangent2, T1, vResult);
+			
+			return vResult;
+#endif
 		}
 
 #ifdef __clang__

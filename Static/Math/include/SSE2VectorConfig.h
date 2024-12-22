@@ -873,8 +873,8 @@ namespace UltReality::Math
 #endif
 #endif
 
-    VEC_GLOBCONST VECTOR_F32 g_SinCoefficients0 = { { { -0.16666667f, +0.0083333310f, -0.00019840874f, +2.7525562e-06f } } };
-    VEC_GLOBCONST VECTOR_F32 g_SinCoefficients1 = { { { -2.3889859e-08f, -0.16665852f /*Est1*/, +0.0083139502f /*Est2*/, -0.00018524670f /*Est3*/ } } };
+    VEC_GLOBCONST VECTOR_F32 g_SineCoefficients0 = { { { -0.16666667f, +0.0083333310f, -0.00019840874f, +2.7525562e-06f } } };
+    VEC_GLOBCONST VECTOR_F32 g_SineCoefficients1 = { { { -2.3889859e-08f, -0.16665852f /*Est1*/, +0.0083139502f /*Est2*/, -0.00018524670f /*Est3*/ } } };
     VEC_GLOBCONST VECTOR_F32 g_CosCoefficients0 = { { { -0.5f, +0.041666638f, -0.0013888378f, +2.4760495e-05f } } };
     VEC_GLOBCONST VECTOR_F32 g_CosCoefficients1 = { { { -2.6051615e-07f, -0.49992746f /*Est1*/, +0.041493919f /*Est2*/, -0.0012712436f /*Est3*/ } } };
     VEC_GLOBCONST VECTOR_F32 g_TanCoefficients0 = { { { 1.0f, 0.333333333f, 0.133333333f, 5.396825397e-2f } } };
