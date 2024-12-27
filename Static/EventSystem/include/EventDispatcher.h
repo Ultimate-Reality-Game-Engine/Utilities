@@ -724,6 +724,6 @@ namespace UltReality::Utilities
 		}
 	};
 }
-#endif // !ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
 #pragma pop_macro("min")
 #pragma pop_macro("max")
+#endif // !ULTREALITY_UTILITIES_EVENT_DISPATCHER_H

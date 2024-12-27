@@ -12,7 +12,7 @@ protected:
 	AInt2 aint2{ 5, 6 };
 
 	// Helper function to extract vector components
-	static std::array<float, 4> ExtractComponents(const A_VECTOR vec)
+	static std::array<float, 4> ExtractComponents(A_VECTOR vec)
 	{
 #if defined(_SSE2_INTRINSICS_)
 		alignas(16) float components[4];

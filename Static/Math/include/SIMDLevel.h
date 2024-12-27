@@ -8,7 +8,7 @@
 
 #if defined(_VECTORCALL_)
 #define VEC_CALLCONV __vectorcall
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__)
 #define VEC_CALLCONV 
 #else
 #define VEC_CALLCONV __fastcall
@@ -69,7 +69,7 @@
 #define _SSE2_INTRINSICS_
 #endif
 #if !defined(_SSE2_INTRINSICS_) && !defined(_NO_INTRINSICS_)
-#if (defined(_M_IX86) || defined(_M_X64) || __i386__ || ____x86_64__) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC)
+#if (defined(_M_IX86) || defined(_M_X64) || __i386__ || __x86_64__) && !defined(_M_HYBRID_X86_ARM64) && !defined(_M_ARM64EC)
 #define _SSE2_INTRINSICS_
 #elif !defined(_NO_INTRINSICS_)
 #error SIMD not supported on this target. Set _NO_INTRINSICS_ to explicitly compile without SIMD support

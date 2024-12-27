@@ -394,7 +394,7 @@ namespace UltReality::Math
 
 #ifdef _PREFAST_
 #pragma prefast(push)
-#pragma prefast(disable : 25000, "FXMVECTOR is 16 bytes")
+#pragma prefast(disable : 25000, "FVECTOR is 16 bytes")
 #pragma prefast(disable : 26495, "Union initialization confuses /analyze")
 #endif
 
@@ -2686,7 +2686,7 @@ namespace UltReality::Math
 		FORCE_INLINE VECTOR VEC_CALLCONV Clamp(A_VECTOR v, A_VECTOR min, A_VECTOR max) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
-			//assert(Vector4LessOrEqual(min, max));
+			//assert(4LessOrEqual(min, max));
 #endif
 
 #if defined(_NO_INTRINSICS_)
@@ -2973,7 +2973,7 @@ namespace UltReality::Math
 			return result.v;
 
 #elif defined(_SSE2_INTRINSICS_)
-			FMADD_PS(V1, V2, V3);
+			return FMADD_PS(V1, V2, V3);
 #endif
 		}
 
@@ -3007,7 +3007,7 @@ namespace UltReality::Math
 			return result.v;
 
 #elif defined(_SSE2_INTRINSICS_)
-			FNMADD_PS(V1, V2, V3);
+			return FNMADD_PS(V1, V2, V3);
 #endif
 		}
 
@@ -3332,31 +3332,31 @@ namespace UltReality::Math
 
 			FORCE_INLINE __m128i GetLeadingBit(const __m128i value) noexcept
 			{
-				static const VECTOR_I32 g_XM0000FFFF = { { { 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF } } };
-				static const VECTOR_I32 g_XM000000FF = { { { 0x000000FF, 0x000000FF, 0x000000FF, 0x000000FF } } };
-				static const VECTOR_I32 g_XM0000000F = { { { 0x0000000F, 0x0000000F, 0x0000000F, 0x0000000F } } };
-				static const VECTOR_I32 g_XM00000003 = { { { 0x00000003, 0x00000003, 0x00000003, 0x00000003 } } };
+				static const VECTOR_I32 g_0000FFFF = { { { 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF } } };
+				static const VECTOR_I32 g_000000FF = { { { 0x000000FF, 0x000000FF, 0x000000FF, 0x000000FF } } };
+				static const VECTOR_I32 g_0000000F = { { { 0x0000000F, 0x0000000F, 0x0000000F, 0x0000000F } } };
+				static const VECTOR_I32 g_00000003 = { { { 0x00000003, 0x00000003, 0x00000003, 0x00000003 } } };
 
 				__m128i v = value, r, c, b, s;
 
-				c = _mm_cmpgt_epi32(v, g_XM0000FFFF);   // c = (v > 0xFFFF)
+				c = _mm_cmpgt_epi32(v, g_0000FFFF);   // c = (v > 0xFFFF)
 				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
 				r = _mm_slli_epi32(b, 4);               // r = (b << 4)
 				v = multi_srl_epi32(v, r);              // v = (v >> r)
 
-				c = _mm_cmpgt_epi32(v, g_XM000000FF);   // c = (v > 0xFF)
+				c = _mm_cmpgt_epi32(v, g_000000FF);   // c = (v > 0xFF)
 				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
 				s = _mm_slli_epi32(b, 3);               // s = (b << 3)
 				v = multi_srl_epi32(v, s);              // v = (v >> s)
 				r = _mm_or_si128(r, s);                 // r = (r | s)
 
-				c = _mm_cmpgt_epi32(v, g_XM0000000F);   // c = (v > 0xF)
+				c = _mm_cmpgt_epi32(v, g_0000000F);   // c = (v > 0xF)
 				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
 				s = _mm_slli_epi32(b, 2);               // s = (b << 2)
 				v = multi_srl_epi32(v, s);              // v = (v >> s)
 				r = _mm_or_si128(r, s);                 // r = (r | s)
 
-				c = _mm_cmpgt_epi32(v, g_XM00000003);   // c = (v > 0x3)
+				c = _mm_cmpgt_epi32(v, g_00000003);   // c = (v > 0x3)
 				b = _mm_srli_epi32(c, 31);              // b = (c ? 1 : 0)
 				s = _mm_slli_epi32(b, 1);               // s = (b << 1)
 				v = multi_srl_epi32(v, s);              // v = (v >> s)
@@ -4577,7 +4577,7 @@ namespace UltReality::Math
 			VECTOR V1 = Multiply(v, OneOverPi);
 			V1 = Round(V1);
 
-			V1 = NegativeMultiplySubtract(g_Pi.v, V1, V);
+			V1 = NegativeMultiplySubtract(g_Pi.v, V1, v);
 
 			VECTOR T0 = SplatX(g_TanEstCoefficients.v);
 			VECTOR T1 = SplatY(g_TanEstCoefficients.v);
@@ -4873,6 +4873,214 @@ namespace UltReality::Math
 			vResult = FMADD_PS(tangent2, T1, vResult);
 			
 			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV HermiteV(A_VECTOR position1, A_VECTOR tangent1, A_VECTOR position2, B_VECTOR tangent2, C_VECTOR VT) noexcept
+		{
+			// Result = (2 * t^3 - 3 * t^2 + 1) * Position0 +
+    		//          (t^3 - 2 * t^2 + t) * Tangent0 +
+    		//          (-2 * t^3 + 3 * t^2) * Position1 +
+    		//          (t^3 - t^2) * Tangent1
+#if defined(_NO_INTRINSICS_)
+			VECTOR T2 = Multiply(VT, VT);
+			VECTOR T3 = Multiply(VT, T2);
+
+			VECTOR P0 = Replicate(2.0f * T3.vector4_f32[0] - 3.0f * T2.vector4_f32[0] + 1.0f);
+			VECTOR T0 = Replicate(T3.vector4_f32[1] - 2.0f * T2.vector4_f32[1] + VT.vector4_f32[1]);
+			VECTOR P1 = Replicate(-2.0f * T3.vector4_f32[2] + 3.0f * T2.vector4_f32[2]);
+			VECTOR T1 = Replicate(T3.vector4_f32[3] - T2.vector4_f32[3]);
+
+			VECTOR Result = Multiply(P0, position1);
+			Result = MultiplyAdd(T0, tangent1, Result);
+			Result = MultiplyAdd(P1, position2, Result);
+			Result = MultiplyAdd(T1, tangent1, Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 CatMulT2 = { { { -3.0f, -2.0f, 3.0f, -1.0f } } };
+			static const VECTOR_F32 CatMulT3 = { { { 2.0f, 1.0f, -2.0f, 1.0f } } };
+
+			VECTOR T2 = _mm_mul_ps(VT, VT);
+			VECTOR T3 = _mm_mul_ps(VT, T2);
+			// Mul by the constants against t^2
+			T2 = _mm_mul_ps(T2, CatMulT2);
+			// Mul by the constants against t^3
+			T3 = FMADD_PS(T3, CatMulT3, T2);
+			// T3 now has the pre-result.
+			// I need to add t.y only
+			T2 = _mm_and_ps(VT, g_MaskY);
+			T3 = _mm_add_ps(T3, T2);
+			// Add 1.0f to x
+			T3 = _mm_add_ps(T3, g_IdentityR0);
+			// Now, I have the constants created
+			// Mul the x constant to Position0
+			VECTOR vResult = PERMUTE_PS(T3, _MM_SHUFFLE(0, 0, 0, 0));
+			vResult = _mm_mul_ps(vResult, position1);
+			// Mul the y constant to Tangent0
+			T2 = PERMUTE_PS(T3, _MM_SHUFFLE(1, 1, 1, 1));
+			vResult = FMADD_PS(T2, tangent1, vResult);
+			// Mul the z constant to Position1
+			T2 = PERMUTE_PS(T3, _MM_SHUFFLE(2, 2, 2, 2));
+			vResult = FMADD_PS(T2, position2, vResult);
+			// Mul the w constant to Tangent1
+			T3 = PERMUTE_PS(T3, _MM_SHUFFLE(3, 3, 3, 3));
+			vResult = FMADD_PS(T3, tangent2, vResult);
+			
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV CatmullRom(A_VECTOR position1, A_VECTOR position2, A_VECTOR position3, B_VECTOR position4, float t) noexcept
+		{
+			// Result = ((-t^3 + 2 * t^2 - t) * position1 +
+    		//           (3 * t^3 - 5 * t^2 + 2) * position2 +
+    		//           (-3 * t^3 + 4 * t^2 + t) * position3 +
+    		//           (t^3 - t^2) * position4) * 0.5
+#if defined(_NO_INTRINSICS_)
+			float t2 = t * t;
+			float t3 = t * t2;
+
+			VECTOR P0 = Replicate((-t3 + 2.0f * t2 - t) * 0.5f);
+			VECTOR P1 = Replicate((3.0f * t3 - 5.0f * t2 + 2.0f) * 0.5f);
+			VECTOR P2 = Replicate((-3.0f * t3 + 4.0f * t2 + t) * 0.5f);
+			VECTOR P3 = Replicate((t3 - t2) * 0.5f);
+
+			VECTOR Result = Multiply(P0, position1);
+			Result = MultiplyAdd(P1, position2, Result);
+			Result = MultiplyAdd(P2, position3, Result);
+			Result = MultiplyAdd(P3, position4, Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			float t2 = t * t;
+			float t3 = t * t2;
+
+			VECTOR P0 = _mm_set_ps1((-t3 + 2.0f * t2 - t) * 0.5f);
+			VECTOR P1 = _mm_set_ps1((3.0f * t3 - 5.0f * t2 + 2.0f) * 0.5f);
+			VECTOR P2 = _mm_set_ps1((-3.0f * t3 + 4.0f * t2 + t) * 0.5f);
+			VECTOR P3 = _mm_set_ps1((t3 - t2) * 0.5f);
+
+			P1 = _mm_mul_ps(position2, P1);
+			P0 = FMADD_PS(position1, P0, P1);
+			P3 = _mm_mul_ps(position4, P3);
+			P2 = FMADD_PS(position3, P2, P3);
+			P0 = _mm_add_ps(P0, P2);
+			
+			return P0;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV CatmullRomV(A_VECTOR position1, A_VECTOR position2, A_VECTOR position3, B_VECTOR position4, C_VECTOR VT) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			float fx = VT.vector4_f32[0];
+			float fy = VT.vector4_f32[1];
+			float fz = VT.vector4_f32[2];
+			float fw = VT.vector4_f32[3];
+			VECTOR_F32 vResult = { { {
+					0.5f * ((-fx * fx * fx + 2 * fx * fx - fx) * position1.vector4_f32[0]
+					+ (3 * fx * fx * fx - 5 * fx * fx + 2) * position2.vector4_f32[0]
+					+ (-3 * fx * fx * fx + 4 * fx * fx + fx) * position3.vector4_f32[0]
+					+ (fx * fx * fx - fx * fx) * position4.vector4_f32[0]),
+
+					0.5f * ((-fy * fy * fy + 2 * fy * fy - fy) * position1.vector4_f32[1]
+					+ (3 * fy * fy * fy - 5 * fy * fy + 2) * position2.vector4_f32[1]
+					+ (-3 * fy * fy * fy + 4 * fy * fy + fy) * position3.vector4_f32[1]
+					+ (fy * fy * fy - fy * fy) * position4.vector4_f32[1]),
+
+					0.5f * ((-fz * fz * fz + 2 * fz * fz - fz) * position1.vector4_f32[2]
+					+ (3 * fz * fz * fz - 5 * fz * fz + 2) * position2.vector4_f32[2]
+					+ (-3 * fz * fz * fz + 4 * fz * fz + fz) * position3.vector4_f32[2]
+					+ (fz * fz * fz - fz * fz) * position4.vector4_f32[2]),
+
+					0.5f * ((-fw * fw * fw + 2 * fw * fw - fw) * position1.vector4_f32[3]
+					+ (3 * fw * fw * fw - 5 * fw * fw + 2) * position2.vector4_f32[3]
+					+ (-3 * fw * fw * fw + 4 * fw * fw + fw) * position3.vector4_f32[3]
+					+ (fw * fw * fw - fw * fw) * position4.vector4_f32[3])
+				} } };
+			
+			return vResult.v;
+
+#elif defined(_SSE2_INTRINSICS_)
+			static const VECTOR_F32 Catmul2 = { { { 2.0f, 2.0f, 2.0f, 2.0f } } };
+			static const VECTOR_F32 Catmul3 = { { { 3.0f, 3.0f, 3.0f, 3.0f } } };
+			static const VECTOR_F32 Catmul4 = { { { 4.0f, 4.0f, 4.0f, 4.0f } } };
+			static const VECTOR_F32 Catmul5 = { { { 5.0f, 5.0f, 5.0f, 5.0f } } };
+			// Cache T^2 and T^3
+			VECTOR T2 = _mm_mul_ps(VT, VT);
+			VECTOR T3 = _mm_mul_ps(VT, T2);
+			// Perform the Position0 term
+			VECTOR vResult = _mm_add_ps(T2, T2);
+			vResult = _mm_sub_ps(vResult, VT);
+			vResult = _mm_sub_ps(vResult, T3);
+			vResult = _mm_mul_ps(vResult, position1);
+			// Perform the Position1 term and add
+			VECTOR vTemp = _mm_mul_ps(T3, Catmul3);
+			vTemp = FNMADD_PS(T2, Catmul5, vTemp);
+			vTemp = _mm_add_ps(vTemp, Catmul2);
+			vResult = FMADD_PS(vTemp, position2, vResult);
+			// Perform the Position2 term and add
+			vTemp = _mm_mul_ps(T2, Catmul4);
+			vTemp = FNMADD_PS(T3, Catmul3, vTemp);
+			vTemp = _mm_add_ps(vTemp, VT);
+			vResult = FMADD_PS(vTemp, position3, vResult);
+			// Position3 is the last term
+			T3 = _mm_sub_ps(T3, T2);
+			vResult = FMADD_PS(T3, position4, vResult);
+			// Multiply by 0.5f and exit
+			vResult = _mm_mul_ps(vResult, g_OneHalf);
+			
+			return vResult;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV BaryCentric(A_VECTOR position1, A_VECTOR position2, A_VECTOR position3, float f, float g) noexcept
+		{
+			// Result = Position0 + f * (Position1 - Position0) + g * (Position2 - Position0)
+#if defined(_NO_INTRINSICS_)
+			VECTOR P10 = Subtract(position2, position1);
+			VECTOR ScaleF = Replicate(f);
+
+			VECTOR P20 = Subtract(position3, position1);
+			VECTOR ScaleG = Replicate(g);
+
+			VECTOR Result = MultiplyAdd(P10, ScaleF, position1);
+			Result = MultiplyAdd(P20, ScaleG, Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR R1 = _mm_sub_ps(position2, position1);
+			VECTOR R2 = _mm_sub_ps(position3, position1);
+			VECTOR SF = _mm_set_ps1(f);
+			R1 = FMADD_PS(R1, SF, position1);
+			VECTOR SG = _mm_set_ps1(g);
+			
+			return FMADD_PS(R2, SG, R1);
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV BaryCentricV(A_VECTOR position1, A_VECTOR position2, A_VECTOR position3, B_VECTOR VF, C_VECTOR VG) noexcept
+		{
+			// Result = position1 + f * (position2 - position1) + g * (position3 - position1)
+#if defined(_NO_INTRINSICS_)
+			VECTOR P10 = Subtract(position2, position1);
+			VECTOR P20 = Subtract(position3, position1);
+
+			VECTOR Result = MultiplyAdd(P10, VF, position1);
+			Result = MultiplyAdd(P20, VG, Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR R1 = _mm_sub_ps(position2, position1);
+			VECTOR R2 = _mm_sub_ps(position3, position1);
+			R1 = FMADD_PS(R1, VF, position1);
+			
+			return FMADD_PS(R2, VG, R1);
 #endif
 		}
 

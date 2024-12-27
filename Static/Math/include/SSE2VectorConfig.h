@@ -11,7 +11,7 @@
 #include <SIMDLevel.h>
 
 #if !defined(_NO_VECTOR_OVERLOADS_) && (defined(__clang__) || defined(__GNUC__)) && !defined(_NO_INTRINSICS_)
-#define _NO_VEC_OVERLOADS_
+#define _NO_VECTOR_OVERLOADS_
 #endif
 
 #ifdef _MSC_VER
@@ -112,7 +112,7 @@
 
 #endif // _SSE2_INTRINSICS_ && !_NO_INTRINSICS_
 
-#include <sal.h>
+#include "sal.h"
 #if defined(DEBUG) || defined(_DEBUG)
 #include <assert.h>
 #endif
@@ -814,7 +814,7 @@ namespace UltReality::Math
         VECTOR VEC_CALLCONV Reciprocal(A_VECTOR v) noexcept;
         VECTOR VEC_CALLCONV SqrtEst(A_VECTOR v) noexcept;
         VECTOR VEC_CALLCONV Sqrt(A_VECTOR v) noexcept;
-        VECTOR VEC_CALLCONV ReciprocalSrtEst(A_VECTOR v) noexcept;
+        VECTOR VEC_CALLCONV ReciprocalSqrtEst(A_VECTOR v) noexcept;
         VECTOR VEC_CALLCONV ReciprocalSqrt(A_VECTOR v) noexcept;
         VECTOR VEC_CALLCONV Exp2(A_VECTOR v) noexcept;
         VECTOR VEC_CALLCONV Exp10(A_VECTOR v) noexcept;
@@ -1018,15 +1018,5 @@ namespace UltReality::Math
 }
 
 #include <SSE2VectorConfig.inl>
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef _PREFAST_
-#pragma prefast(pop)
-#endif
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #endif // !ULTREALITY_MATH_SSE2_CONFIG_H

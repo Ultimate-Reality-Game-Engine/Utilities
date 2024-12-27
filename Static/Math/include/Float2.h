@@ -2,6 +2,8 @@
 #define ULTREALITY_MATH_FLOAT2_H
 
 #include <SSE2VectorConfig.h>
+#include <MATRIX.h>
+#include <Float4.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -71,6 +73,62 @@ namespace UltReality::Math
 
 		void VEC_CALLCONV StoreFloat2(_Out_ Float2* pDestination, _In_ A_VECTOR v) noexcept;
 		void VEC_CALLCONV StoreAFloat2(_Out_ AFloat2* pDestination, _In_ A_VECTOR v) noexcept;
+	}
+
+	namespace VEC2
+	{
+		bool VEC_CALLCONV Equal(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV EqualR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV NearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept;
+		bool VEC_CALLCONV NotEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV Greater(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV GreaterR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV GreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV GreaterOrEqualR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV Less(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV LessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV InBounds(A_VECTOR v, A_VECTOR bounds) noexcept;
+
+		bool VEC_CALLCONV IsNaN(A_VECTOR v) noexcept;
+		bool VEC_CALLCONV IsInfinite(A_VECTOR v) noexcept;
+
+		VECTOR VEC_CALLCONV Dot(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV Cross(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV LengthSq(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ReciprocalLengthEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ReciprocalLength(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV LengthEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV Length(A_VECTOR v) noexcept;
+		// NormalizeEst uses a reciprocal estimate and returns QNaN on zero and infinite vectors
+		VECTOR VEC_CALLCONV NormalizeEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV Normalize(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ClampLength(A_VECTOR v, float lengthMin, float lengthMax) noexcept;
+		VECTOR VEC_CALLCONV ClampLengthV(A_VECTOR v, A_VECTOR lengthMin, A_VECTOR lengthMax) noexcept;
+		VECTOR VEC_CALLCONV Reflect(A_VECTOR incident, A_VECTOR normal) noexcept;
+		VECTOR VEC_CALLCONV Refract(A_VECTOR incident, A_VECTOR normal, float refractionIndex) noexcept;
+		// Return the refraction of of a 2D vector
+		VECTOR VEC_CALLCONV RefractV(A_VECTOR incident, A_VECTOR normal, A_VECTOR refractionIndex) noexcept;
+		VECTOR VEC_CALLCONV Orthogonal(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenNormalsEst(A_VECTOR N1, A_VECTOR N2) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenNormals(A_VECTOR N1, A_VECTOR N2) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenVectors(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV LinePointDistance(A_VECTOR linePoint1, A_VECTOR linePoint2, A_VECTOR point) noexcept;
+		VECTOR VEC_CALLCONV IntersectLine(A_VECTOR line1Point1, A_VECTOR line1Point2, A_VECTOR line2Point1, B_VECTOR line2Point2) noexcept;
+		VECTOR VEC_CALLCONV Transform(A_VECTOR v, A_VECTOR m) noexcept;
+		Float4* VEC_CALLCONV TransformStream(_Out_writes_bytes_(sizeof(Float4) + outputStride * (vectorCount - 1)) Float4* pOutputStream, 
+			_In_ size_t outputStride, 
+			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
+		VECTOR VEC_CALLCONV TransformCoord(A_VECTOR v, A_VECTOR m) noexcept;
+		Float2* VEC_CALLCONV TransformCoordStream(_Out_writes_bytes_(sizeof(Float2) + outputStream * (vectorCount - 1)) Float2* pOutputStream, 
+			_In_ size_t outputStride, 
+			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
+		VECTOR VEC_CALLCONV TransformNormal(A_VECTOR v, MATRIX m) noexcept;
+		Float2* VEC_CALLCONV TransformNormalStream(_Out_writes_bytes_(sizeof(Float2) + outputStream * (vectorCount - 1)) Float2* pOutputStream, 
+			_In_ size_t outputStream, 
+			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
 	}
 }
 

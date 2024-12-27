@@ -71,6 +71,13 @@ namespace UltReality::Math
 		void VEC_CALLCONV StoreInt2(_Out_ Int2* pDestination, _In_ A_VECTOR v) noexcept;
 		void VEC_CALLCONV StoreAInt2(_Out_ AInt2* pDestination, _In_ A_VECTOR v) noexcept;
 	}
+
+	namespace VEC2
+	{
+		bool VEC_CALLCONV EqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV EqualIntR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV NotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+	}
 }
 
 #include <Int2.inl>
