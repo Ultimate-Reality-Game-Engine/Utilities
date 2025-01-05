@@ -2,6 +2,7 @@
 #define ULTREALITY_MATH_FLOAT4_H
 
 #include <SSE2VectorConfig.h>
+#include <MATRIX.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -73,6 +74,48 @@ namespace UltReality::Math
 
 		void VEC_CALLCONV StoreFloat4(_Out_ Float4* pDestination, _In_ A_VECTOR v) noexcept;
 		void VEC_CALLCONV StoreAFloat4(_Out_ AFloat4* pDestination, _In_ A_VECTOR v) noexcept;
+	}
+
+	namespace VEC4
+	{
+		bool VEC_CALLCONV Equal(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV EqualR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV NearEqual(A_VECTOR V1, A_VECTOR V2, A_VECTOR epsilon) noexcept;
+		bool VEC_CALLCONV NotEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV Greater(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV GreaterR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV GreaterOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV GreaterOrEqualR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV Less(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV LessOrEqual(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV InBounds(A_VECTOR v, A_VECTOR bounds) noexcept;
+
+		bool VEC_CALLCONV IsNaN(A_VECTOR v) noexcept;
+		bool VEC_CALLCONV IsInfinite(A_VECTOR v) noexcept;
+
+		VECTOR VEC_CALLCONV Dot(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV Cross(A_VECTOR V1, A_VECTOR V2, A_VECTOR V3) noexcept;
+		VECTOR VEC_CALLCONV LengthSq(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ReciprocalLengthEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ReciprocalLength(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV LengthEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV Length(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV NormalizeEst(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV Normalize(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV ClampLength(A_VECTOR v, float lengthMin, float lengthMax) noexcept;
+		VECTOR VEC_CALLCONV ClampLengthV(A_VECTOR v, A_VECTOR lengthMin, A_VECTOR lengthMax) noexcept;
+		VECTOR VEC_CALLCONV Reflect(A_VECTOR incident, A_VECTOR normal) noexcept;
+		VECTOR VEC_CALLCONV Refract(A_VECTOR incident, A_VECTOR normal, float refractionIndex) noexcept;
+		VECTOR VEC_CALLCONV RefractV(A_VECTOR incident, A_VECTOR normal, A_VECTOR refractionIndex) noexcept;
+		VECTOR VEC_CALLCONV Orthogonal(A_VECTOR v) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenNormalsEst(A_VECTOR N1, A_VECTOR N2) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenNormals(A_VECTOR N1, A_VECTOR N2) noexcept;
+		VECTOR VEC_CALLCONV AngleBetweenVectors(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV Transform(A_VECTOR v, A_MATRIX m) noexcept;
+		Float4* VEC_CALLCONV TransformStream(_Out_writes_bytes_(sizeof(Float4) + outputStride * (vectorCount - 1)) Float4* pOutputStream, 
+			_In_ size_t outputStride, 
+			_In_reads_bytes_(sizeof(Float4) inputStride * (vectorCount - 1)) const Float4* pInputStream, 
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ A_MATRIX m) noexcept;
 	}
 }
 

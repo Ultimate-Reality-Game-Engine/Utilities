@@ -1061,7 +1061,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE Float4* VEC_CALLCONV TransformStream(Float4* pOutputStream, size_t outputStride, const Float2* pInputStream, size_t inputStride, size_t vectorCount, MATRIX m) noexcept
+		FORCE_INLINE Float4* VEC_CALLCONV TransformStream(Float4* pOutputStream, size_t outputStride, const Float2* pInputStream, size_t inputStride, size_t vectorCount, A_MATRIX m) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pOutputStream != nullptr);
@@ -1412,7 +1412,7 @@ namespace UltReality::Math
 		}
 
 		_Use_decl_annotations_
-		FORCE_INLINE Float2* VEC_CALLCONV TransformCoordStream(Float2* pOutputStream, size_t outputStride, const Float2* pInputStream, size_t inputStride, size_t vectorCount, MATRIX m) noexcept
+		FORCE_INLINE Float2* VEC_CALLCONV TransformCoordStream(Float2* pOutputStream, size_t outputStride, const Float2* pInputStream, size_t inputStride, size_t vectorCount, A_MATRIX m) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert(pOutputStream != nullptr);
@@ -1806,6 +1806,358 @@ namespace UltReality::Math
 					VECTOR W = PERMUTE_PS(vTemp, _MM_SHUFFLE(3, 3, 3, 3));
 
 					vTemp = _mm_div_ps(vTemp, W);
+
+					_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
+					pOutputVector += outputStride;
+				}
+			}
+
+			SFENCE();
+
+			return pOutputStream;
+#endif
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV TransformNormal(A_VECTOR v, A_MATRIX m) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			VECTOR Y = VEC::SplatY(v);
+			VECTOR X = VEC::SplatX(v);
+
+			VECTOR Result = VEC::Multiply(Y, m.r[1]);
+			Result = VEC::MultiplyAdd(X, m.r[0], Result);
+
+			return Result;
+
+#elif defined(_SSE2_INTRINSICS_)
+			VECTOR vResult = PERMUTE_PS(v, _MM_SHUFFLE(1, 1, 1, 1)); // y
+			vResult = _mm_mul_ps(vResult, m.r[1]);
+			
+			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(0, 0, 0, 0)); // x
+			vResult = FMADD_PS(vTemp. m.r[0], vResult);
+			
+			return vResult;
+#endif
+		}
+
+		_Use_decl_annotations_
+		FORCE_INLINE Float2* VEC_CALLCONV TransformNormalStream(Float2* pOutputStream, size_t outputStride, const Float2* pInputStream, size_t inputStride, size_t vectorCount, A_MATRIX m) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(pOutputStream != nullptr);
+			assert(pInputStream != nullptr);
+
+			assert(inputStride >= sizeof(Float2));
+			_Analysis_assume_(inputStride >= sizeof(Float2));
+
+			assert(outputStride >= sizeof(Float2));
+			_Analysis_assume_(outputStride >= sizeof(Float2));
+#endif
+
+//#if defined(_NO_INTRINSICS_)
+			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
+			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
+
+			const VECTOR row0 = m.r[0];
+			const VECTOR row1 = m.r[1];
+
+			for (size_t i = 0; i < vectorCount; i++)
+			{
+				VECTOR V = VEC::Float2(reinterpret_cast<const Float2*>(pInputVector));
+				VECTOR Y = VEC::SplatY(v);
+				VECTOR X = VEC::SplatX(v);
+
+				VECTOR Result = VEC::Multiply(Y, row1);
+				Result = VEC::MultiplyAdd(X, row0, Result);
+
+#ifdef _PREFAST_
+#pragma prefast(push)
+#pragma prefast(disable : 26015, "PREfast noise: Esp:1307" )
+#endif
+
+				VEC::StoreFloat2(reinterpret_cast<Float2*>(pOutputVector), Result);
+
+#ifdef _PREFAST_
+#pragma prefast(pop)
+#endif
+
+				pInputVector += InputStride;
+				pOutputVector += OutputStride;
+			}
+
+			return pOutputStream;
+
+#elif defined(_AVX2_INTRINSICS_)
+			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
+			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
+
+			size_t i = 0;
+			size_t four = vectorCount >> 2;
+			if (four > 0)
+			{
+				__m256 row0 = _mm256_broadcast_ps(&m.r[0]);
+				__m256 row1 = _mm256_broadcast_ps(&m.r[1]);
+
+				if (inputStride == sizeof(Float2))
+				{
+					if (outputStride == sizeof(Float2))
+					{
+						if (!(reinterpret_cast<uintptr_t>(pOutputStream) & 0x1F))
+						{
+							// Packed input, aligned & packed output
+							for (size_t j = 0; j < four; ++j)
+							{
+								__m256 VV = _mm256_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+								pInputVector += sizeof(Float2) * 4;
+
+								__m256 Y2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(3, 3, 3, 3));
+								__m256 X2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(2, 2, 2, 2));
+								__m256 Y1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(1, 1, 1, 1));
+								__m256 X1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(0, 0, 0, 0));
+
+								__m256 vTempA = _mm256_mul_ps(Y1, row1);
+								__m256 vTempB = _mm256_mul_ps(Y2, row1);
+								vTempA = _mm256_fmadd_ps(X1, row0, vTempA);
+								vTempB = _mm256_fmadd_ps(X2, row0, vTempB);
+
+								X1 = _mm256_shuffle_ps(vTempA, vTempB, 0x44);
+								_256_STREAM_PS(reinterpret_cast<float*>(pOutputVector), X1);
+								pOutputVector += sizeof(Float2) * 4;
+
+								i += 4;
+							}
+						}
+						else
+						{
+							// Packed input, packed output
+							for (size_t j = 0; j < four; ++j)
+							{
+								__m256 VV = _mm256_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+								pInputVector += sizeof(Float2) * 4;
+
+								__m256 Y2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(3, 3, 3, 3));
+								__m256 X2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(2, 2, 2, 2));
+								__m256 Y1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(1, 1, 1, 1));
+								__m256 X1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(0, 0, 0, 0));
+
+								__m256 vTempA = _mm256_mul_ps(Y1, row1);
+								__m256 vTempB = _mm256_mul_ps(Y2, row1);
+								vTempA = _mm256_fmadd_ps(X1, row0, vTempA);
+								vTempB = _mm256_fmadd_ps(X2, row0, vTempB);
+
+								X1 = _mm256_shuffle_ps(vTempA, vTempB, 0x44);
+								_mm256_storeu_ps(reinterpret_cast<float*>(pOutputVector), X1);
+								pOutputVector += sizeof(Float2) * 4;
+
+								i += 4;
+							}
+						}
+					}
+					else
+					{
+						// Packed input, unpacked output
+						for (size_t j = 0; j < four; ++j)
+						{
+							__m256 VV = _mm256_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+							pInputVector += sizeof(Float2) * 4;
+
+							__m256 Y2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(3, 3, 3, 3));
+							__m256 X2 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(2, 2, 2, 2));
+							__m256 Y1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(1, 1, 1, 1));
+							__m256 X1 = _mm256_shuffle_ps(VV, VV, _MM_SHUFFLE(0, 0, 0, 0));
+
+							__m256 vTempA = _mm256_mul_ps(Y1, row1);
+							__m256 vTempB = _mm256_mul_ps(Y2, row1);
+							vTempA = _mm256_fmadd_ps(X1, row0, vTempA);
+							vTempB = _mm256_fmadd_ps(X2, row0, vTempB);
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector),
+								_mm_castps_pd(_mm256_castps256_ps128(vTempA)));
+							pOutputVector += outputStride;
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector),
+								_mm_castps_pd(_mm256_castps256_ps128(vTempB)));
+							pOutputVector += outputStride;
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector),
+								_mm_castps_pd(_mm256_extractf128_ps(vTempA, 1)));
+							pOutputVector += outputStride;
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector),
+								_mm_castps_pd(_mm256_extractf128_ps(vTempB, 1)));
+							pOutputVector += outputStride;
+
+							i += 4;
+						}
+					}
+				}
+			}
+
+			if (i < vectorCount)
+			{
+				const VECTOR row0 = m.r[0];
+				const VECTOR row1 = m.r[1];
+
+				for (; i < vectorCount; i++)
+				{
+					__m128 xy = _mm_castpd_ps(_mm_load_sd(reinterpret_cast<const double*>(pInputVector)));
+					pInputVector += inputStride;
+
+					VECTOR Y = PERMUTE_PS(xy, _MM_SHUFFLE(1, 1, 1, 1));
+					VECTOR X = PERMUTE_PS(xy, _MM_SHUFFLE(0, 0, 0, 0));
+
+					VECTOR vTemp = _mm_mul_ps(Y, row1);
+					vTemp = FMADD_PS(X, row0, vTemp);
+
+					_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
+					pOutputVector += outputStride;
+				}
+			}
+
+			SFENCE();
+
+			return pOutputStream;
+#elif defined(_SSE2_INTRINSICS_)
+			auto pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
+			auto pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
+
+			const VECTOR row0 = m.r[0];
+			const VECTOR row1 = m.r[1];
+
+			size_t i = 0;
+			size_t two = vectorCount >> 1;
+			if (two > 0)
+			{
+				if (inputStride == sizeof(Float2))
+				{
+					if (outputStride == sizeof(Float2))
+					{
+						if (!(reinterpret_cast<uintptr_t>(pOutputStream) & 0xF))
+						{
+							// Packed input, aligned & packed output
+							for (size_t j = 0; j < two; ++j)
+							{
+								VECTOR V = _mm_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+								pInputVector += sizeof(Float2) * 2;
+
+								// Result 1
+								VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
+								VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
+
+								VECTOR vTemp = _mm_mul_ps(Y, row1);
+								VECTOR V1 = XM_FMADD_PS(X, row0, vTemp);
+
+								// Result 2
+								Y = PERMUTE_PS(V, _MM_SHUFFLE(3, 3, 3, 3));
+								X = PERMUTE_PS(V, _MM_SHUFFLE(2, 2, 2, 2));
+
+								vTemp = _mm_mul_ps(Y, row1);
+								VECTOR V2 = FMADD_PS(X, row0, vTemp);
+
+								vTemp = _mm_movelh_ps(V1, V2);
+
+								STREAM_PS(reinterpret_cast<float*>(pOutputVector), vTemp);
+								pOutputVector += sizeof(Float2) * 2;
+
+								i += 2;
+							}
+						}
+						else
+						{
+							// Packed input, unaligned & packed output
+							for (size_t j = 0; j < two; ++j)
+							{
+								VECTOR V = _mm_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+								pInputVector += sizeof(Float2) * 2;
+
+								// Result 1
+								VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
+								VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
+
+								VECTOR vTemp = _mm_mul_ps(Y, row1);
+								VECTOR V1 = FMADD_PS(X, row0, vTemp);
+
+								// Result 2
+								Y = PERMUTE_PS(V, _MM_SHUFFLE(3, 3, 3, 3));
+								X = PERMUTE_PS(V, _MM_SHUFFLE(2, 2, 2, 2));
+
+								vTemp = _mm_mul_ps(Y, row1);
+								VECTOR V2 = FMADD_PS(X, row0, vTemp);
+
+								vTemp = _mm_movelh_ps(V1, V2);
+
+								_mm_storeu_ps(reinterpret_cast<float*>(pOutputVector), vTemp);
+								pOutputVector += sizeof(Float2) * 2;
+
+								i += 2;
+							}
+						}
+					}
+					else
+					{
+						// Packed input, unpacked output
+						for (size_t j = 0; j < two; ++j)
+						{
+							VECTOR V = _mm_loadu_ps(reinterpret_cast<const float*>(pInputVector));
+							pInputVector += sizeof(Float2) * 2;
+
+							// Result 1
+							VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
+							VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
+
+							VECTOR vTemp = _mm_mul_ps(Y, row1);
+							vTemp = XM_FMADD_PS(X, row0, vTemp);
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
+							pOutputVector += outputStride;
+
+							// Result 2
+							Y = PERMUTE_PS(V, _MM_SHUFFLE(3, 3, 3, 3));
+							X = PERMUTE_PS(V, _MM_SHUFFLE(2, 2, 2, 2));
+
+							vTemp = _mm_mul_ps(Y, row1);
+							vTemp = FMADD_PS(X, row0, vTemp);
+
+							_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
+							pOutputVector += outputStride;
+
+							i += 2;
+						}
+					}
+				}
+			}
+
+			if (!(reinterpret_cast<uintptr_t>(pInputVector) & 0xF) && !(inputStride & 0xF))
+			{
+				// Aligned input
+				for (; i < vectorCount; i++)
+				{
+					VECTOR V = _mm_castsi128_ps(_mm_loadl_epi64(reinterpret_cast<const __m128i*>(pInputVector)));
+					pInputVector += inputStride;
+
+					VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
+					VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
+
+					VECTOR vTemp = _mm_mul_ps(Y, row1);
+					vTemp = FMADD_PS(X, row0, vTemp);
+
+					_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
+					pOutputVector += outputStride;
+				}
+			}
+			else
+			{
+				// Unaligned input
+				for (; i < vectorCount; i++)
+				{
+					__m128 xy = _mm_castpd_ps(_mm_load_sd(reinterpret_cast<const double*>(pInputVector)));
+					pInputVector += inputStride;
+
+					VECTOR Y = PERMUTE_PS(xy, _MM_SHUFFLE(1, 1, 1, 1));
+					VECTOR X = PERMUTE_PS(xy, _MM_SHUFFLE(0, 0, 0, 0));
+
+					VECTOR vTemp = _mm_mul_ps(Y, row1);
+					vTemp = FMADD_PS(X, row0, vTemp);
 
 					_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
 					pOutputVector += outputStride;

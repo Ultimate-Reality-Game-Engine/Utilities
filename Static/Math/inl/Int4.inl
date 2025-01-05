@@ -167,6 +167,71 @@ namespace UltReality::Math
 #endif
 		}
 	}
+
+	namespace VEC4
+	{
+		FORCE_INLINE bool VEC_CALLCONV EqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+    		return (((V1.vector4_u32[0] == V2.vector4_u32[0]) && (V1.vector4_u32[1] == V2.vector4_u32[1]) && (V1.vector4_u32[2] == V2.vector4_u32[2]) && (V1.vector4_u32[3] == V2.vector4_u32[3])) != 0);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTemp = _mm_cmpeq_epi32(_mm_castps_si128(V1), _mm_castps_si128(V2));
+
+			return ((_mm_movemask_ps(_mm_castsi128_ps(vTemp)) == 0xf) != 0);
+#endif
+		}
+
+		FORCE_INLINE uint32_t VEC_CALLCONV EqualIntR(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+			uint32_t CR = 0;
+			if (V1.vector4_u32[0] == V2.vector4_u32[0] &&
+				V1.vector4_u32[1] == V2.vector4_u32[1] &&
+				V1.vector4_u32[2] == V2.vector4_u32[2] &&
+				V1.vector4_u32[3] == V2.vector4_u32[3])
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (V1.vector4_u32[0] != V2.vector4_u32[0] &&
+				V1.vector4_u32[1] != V2.vector4_u32[1] &&
+				V1.vector4_u32[2] != V2.vector4_u32[2] &&
+				V1.vector4_u32[3] != V2.vector4_u32[3])
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+			
+			return CR;
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTemp = _mm_cmpeq_epi32(_mm_castps_si128(V1), _mm_castps_si128(V2));
+			int iTest = _mm_movemask_ps(_mm_castsi128_ps(vTemp));
+			uint32_t CR = 0;
+			if (iTest == 0xf)
+			{
+				CR = CRMASK_CR6TRUE;
+			}
+			else if (!iTest)
+			{
+				CR = CRMASK_CR6FALSE;
+			}
+
+			return CR;
+#endif
+		}
+
+		FORCE_INLINE bool VEC_CALLCONV NotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept
+		{
+#if defined(_NO_INTRINSICS_)
+    		return (((V1.vector4_u32[0] != V2.vector4_u32[0]) || (V1.vector4_u32[1] != V2.vector4_u32[1]) || (V1.vector4_u32[2] != V2.vector4_u32[2]) || (V1.vector4_u32[3] != V2.vector4_u32[3])) != 0);
+
+#elif defined(_SSE2_INTRINSICS_)
+			__m128i vTemp = _mm_cmpeq_epi32(_mm_castps_si128(V1), _mm_castps_si128(V2));
+    		
+			return ((_mm_movemask_ps(_mm_castsi128_ps(vTemp)) != 0xF) != 0);
+#endif
+		}
+	}
 }
 
 #endif // !ULTREALITY_MATH_INT4_INL

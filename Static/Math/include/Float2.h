@@ -118,17 +118,17 @@ namespace UltReality::Math
 		Float4* VEC_CALLCONV TransformStream(_Out_writes_bytes_(sizeof(Float4) + outputStride * (vectorCount - 1)) Float4* pOutputStream, 
 			_In_ size_t outputStride, 
 			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
-			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ A_MATRIX m) noexcept;
 		VECTOR VEC_CALLCONV TransformCoord(A_VECTOR v, A_VECTOR m) noexcept;
 		Float2* VEC_CALLCONV TransformCoordStream(_Out_writes_bytes_(sizeof(Float2) + outputStream * (vectorCount - 1)) Float2* pOutputStream, 
 			_In_ size_t outputStride, 
 			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
-			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
-		VECTOR VEC_CALLCONV TransformNormal(A_VECTOR v, MATRIX m) noexcept;
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ A_MATRIX m) noexcept;
+		VECTOR VEC_CALLCONV TransformNormal(A_VECTOR v, A_MATRIX m) noexcept;
 		Float2* VEC_CALLCONV TransformNormalStream(_Out_writes_bytes_(sizeof(Float2) + outputStream * (vectorCount - 1)) Float2* pOutputStream, 
 			_In_ size_t outputStream, 
 			_In_reads_bytes_(sizeof(Float2) + inputStride * (vectorCount - 1)) const Float2* pInputStream, 
-			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ MATRIX m) noexcept;
+			_In_ size_t inputStride, _In_ size_t vectorCount, _In_ A_MATRIX m) noexcept;
 	}
 }
 

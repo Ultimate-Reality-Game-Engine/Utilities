@@ -74,6 +74,13 @@ namespace UltReality::Math
 		void VEC_CALLCONV StoreInt4(_Out_ Int4* pDestination, _In_ A_VECTOR v) noexcept;
 		void VEC_CALLCONV StoreAInt4(_Out_ AInt4* pDestination, _In_ A_VECTOR v) noexcept;
 	}
+
+	namespace VEC4
+	{
+		bool VEC_CALLCONV EqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+		uint32_t VEC_CALLCONV EqualIntR(A_VECTOR V1, A_VECTOR V2) noexcept;
+		bool VEC_CALLCONV NotEqualInt(A_VECTOR V1, A_VECTOR V2) noexcept;
+	}
 }
 
 #include <Int4.inl>
