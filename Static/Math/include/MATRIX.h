@@ -2,6 +2,8 @@
 #define ULTREALITY_MATH_SSE2_MATRIX_H
 
 #include <SSE2VectorConfig.h>
+#include <Float3.h>
+#include <Float4.h>
 
 namespace UltReality::Math
 {
@@ -100,7 +102,72 @@ namespace UltReality::Math
 
 	namespace MAT
 	{
-		
+		// Return true if any entry in the matrix is NaN
+		bool VEC_CALLCONV IsNaN(A_MATRIX m) noexcept;
+		// Return true if any entry in the matrix is +/- INF
+		bool VEC_CALLCONV IsInfinite(A_MATRIX m) noexcept;
+		// Return true if the MATRIX is equal to identity
+		bool VEC_CALLCONV IsIdentity(A_MATRIX m) noexcept;
+
+		// Perform a 4x4 matrix multiply
+		MATRIX VEC_CALLCONV Multiply(A_MATRIX M1, B_MATRIX M2) noexcept;
+		MATRIX VEC_CALLCONV MultiplyTranspose(A_MATRIX M1, B_MATRIX M2) noexcept;
+		MATRIX VEC_CALLCONV Transpose(A_MATRIX M1, B_MATRIX M2) noexcept;
+		// Returns the inverse and the determinant of a 4x4 matrix
+		MATRIX VEC_CALLCONV Inverse(_Out_opt_ VECTOR* pDeterminant, _In_ A_MATRIX m) noexcept;
+		MATRIX VEC_CALLCONV VectorTensorProduct(A_VECTOR V1, A_VECTOR V2) noexcept;
+		VECTOR VEC_CALLCONV Determinant(A_VECTOR m) noexcept;
+
+		_Success_(return)
+		bool VEC_CALLCONV Decompose(_Out_ VECTOR* outScale, _Out_ VECTOR* outRotationQuaternion, _Out_ VECTOR* outTranslation, _In_ A_MATRIX m) noexcept;
+
+		MATRIX VEC_CALLCONV Identity() noexcept;
+		MATRIX VEC_CALLCONV Set(
+			float m00, float m01, float m02, float m03, 
+			float m10, float m11, float m12, float m13, 
+			float m20, float m21, float m22, float m23, 
+			float m30, float m31, float m32, float m33
+		) noexcept;
+		MATRIX VEC_CALLCONV Translation(float offsetX, float offsetY, float offsetZ) noexcept;
+		MATRIX VEC_CALLCONV TranslationFromVector(A_VECTOR offset) noexcept;
+		MATRIX VEC_CALLCONV Scaling(float scaleX, float scaleY, float scaleZ) noexcept;
+		MATRIX VEC_CALLCONV ScalingFromVector(A_VECTOR scale) noexcept;
+		MATRIX VEC_CALLCONV RotationX(float angle) noexcept;
+		MATRIX VEC_CALLCONV RotationY(float angle) noexcept;
+		MATRIX VEC_CALLCONV RotationZ(float angle) noexcept;
+
+		// Rotates about y-axis (yaw), then x-axis (pitch), then z-axis (roll)
+		MATRIX VEC_CALLCONV RotationPitchYawRoll(float pitch, float yaw, float roll) noexcept;
+
+		// Rotates about y-axis (yaw) from angles.y, then x-axis (pitch) from angles.x, then z-axis (roll) from angles.z
+		MATRIX VEC_CALLCONV RotationPitchYawRoll(A_VECTOR angles) noexcept;
+
+		MATRIX VEC_CALLCONV RotationNormal(A_VECTOR normalAxis, float angle) noexcept;
+		MATRIX VEC_CALLCONV RotationAxis(A_VECTOR axis, float angle) noexcept;
+		MATRIX VEC_CALLCONV RotationQuaternion(A_VECTOR quaternion) noexcept;
+		MATRIX VEC_CALLCONV Transformation2D(A_VECTOR scalingOrigin, float scalingOrientation, A_VECTOR scaling, 
+			A_VECTOR rotationOrigin, float rotation, B_VECTOR translation) noexcept;
+		MATRIX VEC_CALLCONV Transformation(A_VECTOR scalingOrigin, A_VECTOR scalingOrientationQuaternion, A_VECTOR scaling, 
+			B_VECTOR rotationOrigin, C_VECTOR rotationQuaternion, C_VECTOR translation) noexcept;
+		MATRIX VEC_CALLCONV AffineTransformaton2D(A_VECTOR scaling, A_VECTOR rotationOrigin, float rotation, A_VECTOR translation) noexcept;
+		MATRIX VEC_CALLCONV AffineTransformation(A_VECTOR scaling, A_VECTOR rotationOrigin, A_VECTOR rotationQuaternion, B_VECTOR translation) noexcept;
+		MATRIX VEC_CALLCONV Reflect(A_VECTOR reflectionPlane) noexcept;
+		MATRIX VEC_CALLCONV Shadow(A_VECTOR shadowPlane, A_VECTOR lightPosition) noexcept;
+
+		MATRIX VEC_CALLCONV LookAtLH(A_VECTOR eyePosition, A_VECTOR focusPoint, A_VECTOR upDirection) noexcept;
+		MATRIX VEC_CALLCONV LookAtRH(A_VECTOR eyePosition, A_VECTOR focusPoint, A_VECTOR upDirection) noexcept;
+		MATRIX VEC_CALLCONV LookToLH(A_VECTOR eyePosition, A_VECTOR eyeDirection, A_VECTOR upDirection) noexcept;
+		MATRIX VEC_CALLCONV LookToRH(A_VECTOR eyePosition, A_VECTOR eyeDirection, A_VECTOR upDirection) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveLH(float viewWidth, float viewHeight, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveRH(float viewWidth, float viewHeight, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveFovLH(float fovAngleY, float aspectRatio, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveFovRH(float fovAngleY, float aspectRatio, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveOffCenterLH(float viewLeft, float viewRight, float viewBottom, float viewTop, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV PerspectiveOffCenterRH(float viewLeft, float viewRight, float viewBottom, float viewTop, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV OrthographicLH(float viewWidth, float viewHeight, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV OrthographicRH(float viewWidth, float viewHeight, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV OrthographicOffCenterLH(float viewLeft, float viewRight, float viewBottom, float viewTop, float nearZ, float farZ) noexcept;
+		MATRIX VEC_CALLCONV OrthographicOffCenterRH(float viewLeft, float viewRight, float viewBottom, float viewTop, float nearZ, float farZ) noexcept;
 	}
 }
 

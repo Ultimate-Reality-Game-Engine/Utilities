@@ -100,6 +100,7 @@ namespace UltReality::Math
 		VECTOR VEC_CALLCONV ReciprocalLength(A_VECTOR v) noexcept;
 		VECTOR VEC_CALLCONV LengthEst(A_VECTOR v) noexcept;
 		VECTOR VEC_CALLCONV Length(A_VECTOR v) noexcept;
+		// Uses a reciprocal estimate and returns QNaN on zero and infinite vectors
 		VECTOR VEC_CALLCONV NormalizeEst(A_VECTOR v) noexcept;
 		VECTOR VEC_CALLCONV Normalize(A_VECTOR v) noexcept;
 		VECTOR VEC_CALLCONV ClampLength(A_VECTOR v, float lengthMin, float lengthMax) noexcept;
