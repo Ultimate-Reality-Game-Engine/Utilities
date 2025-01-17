@@ -15,13 +15,13 @@
 #endif
 
 // Set deprecated macro value
-#if !defined(_DEPRECATED)
+#if !defined(DEPRECATED)
 #if (__cplusplus >= 201402L)
-#define _DEPRECATED [[deprecated]]
+#define DEPRECATED [[deprecated]]
 #elif defined(__GNUC__) || defined(__clang__)
-#define _DEPRECATED __attribute__ ((deprecated))
+#define DEPRECATED __attribute__ ((deprecated))
 #else
-#define _DEPRECATED __declspec(deprecated("This is deprecated and will be removed in a future version"))
+#define DEPRECATED __declspec(deprecated("This is deprecated and will be removed in a future version"))
 #endif
 #endif
 

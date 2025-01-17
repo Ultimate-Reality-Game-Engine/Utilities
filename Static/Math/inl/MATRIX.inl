@@ -2486,6 +2486,413 @@ namespace UltReality::Math
 			return M;
 #endif
 		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV PerspectiveOffCenterRH(
+			float viewLeft, 
+			float viewRight, 
+			float viewBottom, 
+			float viewTop, 
+			float nearZ, 
+			float farZ
+		) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(nearZ > 0.f && farZ > 0.f);
+			assert(!ScalarNearEqual(viewRight, viewLeft, 0.00001f));
+			assert(!ScalarNearEqual(viewTop, viewBottom, 0.00001f));
+			assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			float TwoNearZ = nearZ + nearZ;
+			float ReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float ReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = farZ / (nearZ - farZ);
+
+			MATRIX M;
+			M.m[0][0] = TwoNearZ * ReciprocalWidth;
+			M.m[0][1] = 0.0f;
+			M.m[0][2] = 0.0f;
+			M.m[0][3] = 0.0f;
+
+			M.m[1][0] = 0.0f;
+			M.m[1][1] = TwoNearZ * ReciprocalHeight;
+			M.m[1][2] = 0.0f;
+			M.m[1][3] = 0.0f;
+
+			M.m[2][0] = (viewLeft + viewRight) * ReciprocalWidth;
+			M.m[2][1] = (viewTop + viewBottom) * ReciprocalHeight;
+			M.m[2][2] = fRange;
+			M.m[2][3] = -1.0f;
+
+			M.m[3][0] = 0.0f;
+			M.m[3][1] = 0.0f;
+			M.m[3][2] = fRange * nearZ;
+			M.m[3][3] = 0.0f;
+			
+			return M;
+
+#elif defined(_SSE2_INTRINSICS_)
+			MATRIX M;
+			float TwoNearZ = nearZ + nearZ;
+			float ReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float ReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = farZ / (nearZ - farZ);
+			// Note: This is recorded on the stack
+			VECTOR rMem = {
+				TwoNearZ * ReciprocalWidth,
+				TwoNearZ * ReciprocalHeight,
+				fRange * nearZ,
+				0
+			};
+			// Copy from memory to SSE register
+			VECTOR vValues = rMem;
+			VECTOR vTemp = _mm_setzero_ps();
+			// Copy x only
+			vTemp = _mm_move_ss(vTemp, vValues);
+			// TwoNearZ*ReciprocalWidth,0,0,0
+			M.r[0] = vTemp;
+			// 0,TwoNearZ*ReciprocalHeight,0,0
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskY);
+			M.r[1] = vTemp;
+			// 0,0,fRange,1.0f
+			M.r[2] = VEC::Set((viewLeft + viewRight) * ReciprocalWidth,
+				(viewTop + viewBottom) * ReciprocalHeight,
+				fRange,
+				-1.0f);
+			// 0,0,-fRange * NearZ,0.0f
+			vValues = _mm_and_ps(vValues, g_MaskZ);
+			M.r[3] = vValues;
+			
+			return M;
+#endif
+		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV OrthographicLH(
+			float viewWidth, 
+			float viewHeight, 
+			float nearZ, 
+			float farZ
+		) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(!ScalarNearEqual(viewWidth, 0.0f, 0.00001f));
+			assert(!ScalarNearEqual(viewHeight, 0.0f, 0.00001f));
+			assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			float fRange = 1.0f / (farZ - nearZ);
+
+			MATRIX M;
+			M.m[0][0] = 2.0f / viewWidth;
+			M.m[0][1] = 0.0f;
+			M.m[0][2] = 0.0f;
+			M.m[0][3] = 0.0f;
+
+			M.m[1][0] = 0.0f;
+			M.m[1][1] = 2.0f / viewHeight;
+			M.m[1][2] = 0.0f;
+			M.m[1][3] = 0.0f;
+
+			M.m[2][0] = 0.0f;
+			M.m[2][1] = 0.0f;
+			M.m[2][2] = fRange;
+			M.m[2][3] = 0.0f;
+
+			M.m[3][0] = 0.0f;
+			M.m[3][1] = 0.0f;
+			M.m[3][2] = -fRange * nearZ;
+			M.m[3][3] = 1.0f;
+			
+			return M;
+
+#elif defined(_SSE2_INTRINSICS_)
+			MATRIX M;
+			float fRange = 1.0f / (farZ - nearZ);
+			// Note: This is recorded on the stack
+			VECTOR rMem = {
+				2.0f / viewWidth,
+				2.0f / viewHeight,
+				fRange,
+				-fRange * nearZ
+			};
+			// Copy from memory to SSE register
+			VECTOR vValues = rMem;
+			VECTOR vTemp = _mm_setzero_ps();
+			// Copy x only
+			vTemp = _mm_move_ss(vTemp, vValues);
+			// 2.0f / ViewWidth,0,0,0
+			M.r[0] = vTemp;
+			// 0,2.0f / ViewHeight,0,0
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskY);
+			M.r[1] = vTemp;
+			// x=fRange,y=-fRange * NearZ,0,1.0f
+			vTemp = _mm_setzero_ps();
+			vValues = _mm_shuffle_ps(vValues, g_IdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
+			// 0,0,fRange,0.0f
+			vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(2, 0, 0, 0));
+			M.r[2] = vTemp;
+			// 0,0,-fRange * NearZ,1.0f
+			vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 1, 0, 0));
+			M.r[3] = vTemp;
+			
+			return M;
+#endif
+		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV OrthographicRH(
+			float viewWidth, 
+			float viewHeight, 
+			float nearZ, 
+			float farZ
+		) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(!ScalarNearEqual(viewWidth, 0.0f, 0.00001f));
+			assert(!ScalarNearEqual(viewHeight, 0.0f, 0.00001f));
+			assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			float fRange = 1.0f / (nearZ - farZ);
+
+			MATRIX M;
+			M.m[0][0] = 2.0f / viewWidth;
+			M.m[0][1] = 0.0f;
+			M.m[0][2] = 0.0f;
+			M.m[0][3] = 0.0f;
+
+			M.m[1][0] = 0.0f;
+			M.m[1][1] = 2.0f / viewHeight;
+			M.m[1][2] = 0.0f;
+			M.m[1][3] = 0.0f;
+
+			M.m[2][0] = 0.0f;
+			M.m[2][1] = 0.0f;
+			M.m[2][2] = fRange;
+			M.m[2][3] = 0.0f;
+
+			M.m[3][0] = 0.0f;
+			M.m[3][1] = 0.0f;
+			M.m[3][2] = fRange * nearZ;
+			M.m[3][3] = 1.0f;
+			
+			return M;
+
+#elif defined(_SSE2_INTRINSICS_)
+			MATRIX M;
+			float fRange = 1.0f / (nearZ - farZ);
+			// Note: This is recorded on the stack
+			VECTOR rMem = {
+				2.0f / viewWidth,
+				2.0f / viewHeight,
+				fRange,
+				fRange * nearZ
+			};
+			// Copy from memory to SSE register
+			VECTOR vValues = rMem;
+			VECTOR vTemp = _mm_setzero_ps();
+			// Copy x only
+			vTemp = _mm_move_ss(vTemp, vValues);
+			// 2.0f / ViewWidth,0,0,0
+			M.r[0] = vTemp;
+			// 0,2.0f / ViewHeight,0,0
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskY);
+			M.r[1] = vTemp;
+			// x=fRange,y=fRange * NearZ,0,1.0f
+			vTemp = _mm_setzero_ps();
+			vValues = _mm_shuffle_ps(vValues, g_IdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
+			// 0,0,fRange,0.0f
+			vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(2, 0, 0, 0));
+			M.r[2] = vTemp;
+			// 0,0,fRange * NearZ,1.0f
+			vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 1, 0, 0));
+			M.r[3] = vTemp;
+			
+			return M;
+#endif
+		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV OrthographicOffCenterLH(
+			float viewLeft, 
+			float viewRight, 
+			float viewBottom, 
+			float viewTop, 
+			float nearZ, 
+			float farZ
+		) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(!ScalarNearEqual(viewRight, viewLeft, 0.00001f));
+			assert(!ScalarNearEqual(viewTop, viewBottom, 0.00001f));
+			assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			float ReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float ReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = 1.0f / (farZ - nearZ);
+
+			MATRIX M;
+			M.m[0][0] = ReciprocalWidth + ReciprocalWidth;
+			M.m[0][1] = 0.0f;
+			M.m[0][2] = 0.0f;
+			M.m[0][3] = 0.0f;
+
+			M.m[1][0] = 0.0f;
+			M.m[1][1] = ReciprocalHeight + ReciprocalHeight;
+			M.m[1][2] = 0.0f;
+			M.m[1][3] = 0.0f;
+
+			M.m[2][0] = 0.0f;
+			M.m[2][1] = 0.0f;
+			M.m[2][2] = fRange;
+			M.m[2][3] = 0.0f;
+
+			M.m[3][0] = -(viewLeft + viewRight) * ReciprocalWidth;
+			M.m[3][1] = -(viewTop + viewBottom) * ReciprocalHeight;
+			M.m[3][2] = -fRange * nearZ;
+			M.m[3][3] = 1.0f;
+			
+			return M;
+
+#elif defined(_SSE2_INTRINSICS_)
+			MATRIX M;
+			float fReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float fReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = 1.0f / (farZ - nearZ);
+			// Note: This is recorded on the stack
+			VECTOR rMem = {
+				fReciprocalWidth,
+				fReciprocalHeight,
+				fRange,
+				1.0f
+			};
+			VECTOR rMem2 = {
+				-(viewLeft + viewRight),
+				-(viewTop + viewBottom),
+				-nearZ,
+				1.0f
+			};
+			// Copy from memory to SSE register
+			VECTOR vValues = rMem;
+			VECTOR vTemp = _mm_setzero_ps();
+			// Copy x only
+			vTemp = _mm_move_ss(vTemp, vValues);
+			// fReciprocalWidth*2,0,0,0
+			vTemp = _mm_add_ss(vTemp, vTemp);
+			M.r[0] = vTemp;
+			// 0,fReciprocalHeight*2,0,0
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskY);
+			vTemp = _mm_add_ps(vTemp, vTemp);
+			M.r[1] = vTemp;
+			// 0,0,fRange,0.0f
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskZ);
+			M.r[2] = vTemp;
+			// -(ViewLeft + ViewRight)*fReciprocalWidth,-(ViewTop + ViewBottom)*fReciprocalHeight,fRange*-NearZ,1.0f
+			vValues = _mm_mul_ps(vValues, rMem2);
+			M.r[3] = vValues;
+			
+			return M;
+#endif
+		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV OrthographicOffCenterRH(
+			float viewLeft, 
+			float viewRight, 
+			float viewBottom, 
+			float viewTop, 
+			float nearZ, 
+			float farZ
+		) noexcept
+		{
+#if defined(DEBUG) || defined(_DEBUG)
+			assert(!ScalarNearEqual(viewRight, viewLeft, 0.00001f));
+			assert(!ScalarNearEqual(viewTop, viewBottom, 0.00001f));
+			assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
+#endif
+
+#if defined(_NO_INTRINSICS_)
+			float ReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float ReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = 1.0f / (nearZ - farZ);
+
+			MATRIX M;
+			M.m[0][0] = ReciprocalWidth + ReciprocalWidth;
+			M.m[0][1] = 0.0f;
+			M.m[0][2] = 0.0f;
+			M.m[0][3] = 0.0f;
+
+			M.m[1][0] = 0.0f;
+			M.m[1][1] = ReciprocalHeight + ReciprocalHeight;
+			M.m[1][2] = 0.0f;
+			M.m[1][3] = 0.0f;
+
+			M.m[2][0] = 0.0f;
+			M.m[2][1] = 0.0f;
+			M.m[2][2] = fRange;
+			M.m[2][3] = 0.0f;
+
+			M.r[3] = VEC::Set(-(viewLeft + viewRight) * ReciprocalWidth,
+				-(viewTop + viewBottom) * ReciprocalHeight,
+				fRange * nearZ,
+				1.0f);
+			
+			return M;
+#elif defined(_SSE2_INTRINSICS_)
+			MATRIX M;
+			float fReciprocalWidth = 1.0f / (viewRight - viewLeft);
+			float fReciprocalHeight = 1.0f / (viewTop - viewBottom);
+			float fRange = 1.0f / (nearZ - farZ);
+			// Note: This is recorded on the stack
+			VECTOR rMem = {
+				fReciprocalWidth,
+				fReciprocalHeight,
+				fRange,
+				1.0f
+			};
+			VECTOR rMem2 = {
+				-(viewLeft + viewRight),
+				-(viewTop + viewBottom),
+				nearZ,
+				1.0f
+			};
+			// Copy from memory to SSE register
+			VECTOR vValues = rMem;
+			VECTOR vTemp = _mm_setzero_ps();
+			// Copy x only
+			vTemp = _mm_move_ss(vTemp, vValues);
+			// fReciprocalWidth*2,0,0,0
+			vTemp = _mm_add_ss(vTemp, vTemp);
+			M.r[0] = vTemp;
+			// 0,fReciprocalHeight*2,0,0
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskY);
+			vTemp = _mm_add_ps(vTemp, vTemp);
+			M.r[1] = vTemp;
+			// 0,0,fRange,0.0f
+			vTemp = vValues;
+			vTemp = _mm_and_ps(vTemp, g_MaskZ);
+			M.r[2] = vTemp;
+			// -(ViewLeft + ViewRight)*fReciprocalWidth,-(ViewTop + ViewBottom)*fReciprocalHeight,fRange*-NearZ,1.0f
+			vValues = _mm_mul_ps(vValues, rMem2);
+			M.r[3] = vValues;
+			
+			return M;
+#endif
+		}
+
+#ifdef _PREFAST_
+#pragma prefast(pop)
+#endif
+
+		
 	}
 }
 
