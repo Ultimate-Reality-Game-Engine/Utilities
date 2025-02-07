@@ -11,6 +11,10 @@ foreach(dir ${Static_DIRS})
 	if(IS_DIRECTORY "${dir}/include")
 		list(APPEND UtilitiesStatic_HEADERS "${dir}/include")
 	endif()
+
+	if(IS_DIRECTORY "${dir}/inl")
+		list(APPEND UtilitiesStatic_HEADERS "${dir}/inl")
+	endif()
 endforeach()
 
 #message(STATUS ${UtilitiesStatic_SOURCE})

@@ -85,6 +85,12 @@ namespace UltReality::Utilities
 			MaxShow = SIZE_MAXSHOW, // Set when resize event indicates that some other window was just restored to its former size
 			Minimized = SIZE_MINIMIZED, // Set when resize event was to minimize the window
 			Restored = SIZE_RESTORED // Set when resize event was to restore minimized window
+#elif defined(_LINUX_TARGET)
+			MaxHide,
+			Maximized,
+			MaxShow,
+			Minimized,
+			Restored
 #endif
 		};
 
@@ -144,7 +150,7 @@ namespace UltReality::Utilities
 #if defined(_WIN_TARGET)
 			MINMAXINFO*
 #elif defined(_LINUX_TARGET)
-
+			void*
 #elif defined(_MAC_TARGET)
 
 #endif
@@ -281,101 +287,101 @@ namespace UltReality::Utilities
 	enum class Key
 	{
 #if defined(_WIN_TARGET)
-		MouseLButton = VK_LBUTTON, // Left mouse button
-		MouseRButton = VK_RBUTTON, // Right mouse button
-		Cancel = VK_CANCEL, // Control-break processing
-		MouseMButton = VK_MBUTTON, // Middle mouse button
-		MouseXButton1 = VK_XBUTTON1, // X1 mouse button
-		MouseXButton2 = VK_XBUTTON2, // X2 mouse button
-		Back = VK_BACK, // Backspace key
-		Tab = VK_TAB, // Tab key
-		Clear = VK_CLEAR, // Clear key
-		Return = VK_RETURN, // Enter key
-		Enter = VK_RETURN, // Enter key
-		Shift = VK_SHIFT, // Shift key
-		Control = VK_CONTROL, // CTRL key
-		CTRL = VK_CONTROL, // CTRL key
-		Menu = VK_MENU, // ALT key
-		ALT = VK_MENU, // ALT key
-		Pause = VK_PAUSE, // Pause key
-		Capital = VK_CAPITAL, // Caps Lock key
-		CAPS = VK_CAPITAL, // Caps Lock key
-		KANA = VK_KANA, // IME Kana mode
-		HANGUL = VK_HANGUL, // IME Hangul mode
-		IME_ON = VK_IME_ON, // IME On
-		JUNJA = VK_JUNJA, // IME Junja mode
-		FINAL = VK_FINAL, // IME Final mode
-		HANJA = VK_HANJA, // IME Hanja mode
-		KANJI = VK_KANJI, // IME Kanji mode
-		IME_OFF = VK_IME_OFF, // IME Off
-		Escape = VK_ESCAPE, // ESC key
-		ESC = VK_ESCAPE, // ESC key
-		CONVERT = VK_CONVERT, // IME Convert
-		NONCONVERT = VK_NONCONVERT, // IME Non-convert
-		ACCEPT = VK_ACCEPT, // IME Accept
-		MODECHANGE = VK_MODECHANGE, // IME mode change request
-		Space = VK_SPACE, // Spacebar key
-		Prior = VK_PRIOR, // Page Up key
-		PAGE_UP = VK_PRIOR, // Page Up key
-		Next = VK_NEXT, // Page Down key
-		PAGE_DOWN = VK_NEXT, // Page Down key
-		End = VK_END, // End key
-		Home = VK_HOME, // Home key
-		Left = VK_LEFT, // Left arrow key
-		Up = VK_UP, // Up arrow key
-		Right = VK_RIGHT, // Right arrow key
-		Down = VK_DOWN, // Down arrow key
-		Select = VK_SELECT, // Select key
-		Print = VK_PRINT, // Print key
-		Execute = VK_EXECUTE, // Execute key
-		Snapshot = VK_SNAPSHOT, // Print Screen key
-		PRINT_SCREEN = VK_SNAPSHOT, // Print Screen key
-		Insert = VK_INSERT, // INS key
-		INS = VK_INSERT, // INS key
-		Delete = VK_DELETE, // Delete key
-		DEL = VK_DELETE, // Delete key
-		Help = VK_HELP, // Help key
-		Zero = 0x30, // 0 key
-		D0 = 0x31, // 1 key
-		D2 = 0x32, // 2 key
-		D3 = 0x33, // 3 key
-		D4 = 0x34, // 4 key
-		D5 = 0x35, // 5 key
-		D6 = 0x36, // 6 key
-		D7 = 0x37, // 7 key
-		D8 = 0x38, // 8 key
-		D9 = 0x39, // 9 key
-		A = 0x41, // A key
-		B = 0x42, // B key
-		C = 0x43, // C key
-		D = 0x44, // D key
-		E = 0x45, // E key
-		F = 0x46, // F key
-		G = 0x47, // G key
-		H = 0x48, // H key
-		I = 0x49, // I key
-		J = 0x4A, // J key
-		K = 0x4B, // K key
-		L = 0x4C, // L key
-		M = 0x4D, // M key
-		N = 0x4E, // N key
-		O = 0x4F, // O key
-		P = 0x50, // P key
-		Q = 0x51, // Q key
-		R = 0x52, // R key
-		S = 0x53, // S key
-		T = 0x54, // T key
-		U = 0x55, // U key
-		V = 0x56, // V key
-		W = 0x57, // W key
-		X = 0x58, // X key
-		Y = 0x59, // Y key
-		Z = 0x5A, // Z key
-		LWIN = VK_LWIN, // Left Windows key
-		RWIN = VK_RWIN, // Right Windows key
-		APPS = VK_APPS, // Applications key
-		Sleep = VK_SLEEP, // Computer sleep key
-		NumPad0 = VK_NUMPAD0, // Numeric keypad 0
+		MouseLButton 	= VK_LBUTTON, // Left mouse button
+		MouseRButton 	= VK_RBUTTON, // Right mouse button
+		Cancel 			= VK_CANCEL, // Control-break processing
+		MouseMButton 	= VK_MBUTTON, // Middle mouse button
+		MouseXButton1 	= VK_XBUTTON1, // X1 mouse button
+		MouseXButton2 	= VK_XBUTTON2, // X2 mouse button
+		Back 			= VK_BACK, // Backspace key
+		Tab 			= VK_TAB, // Tab key
+		Clear 			= VK_CLEAR, // Clear key
+		Return 			= VK_RETURN, // Enter key
+		Enter 			= VK_RETURN, // Enter key
+		Shift 			= VK_SHIFT, // Shift key
+		Control 		= VK_CONTROL, // CTRL key
+		CTRL 			= VK_CONTROL, // CTRL key
+		Menu 			= VK_MENU, // ALT key
+		ALT 			= VK_MENU, // ALT key
+		Pause 			= VK_PAUSE, // Pause key
+		Capital 		= VK_CAPITAL, // Caps Lock key
+		CAPS 			= VK_CAPITAL, // Caps Lock key
+		KANA 			= VK_KANA, // IME Kana mode
+		HANGUL 			= VK_HANGUL, // IME Hangul mode
+		IME_ON 			= VK_IME_ON, // IME On
+		JUNJA 			= VK_JUNJA, // IME Junja mode
+		FINAL 			= VK_FINAL, // IME Final mode
+		HANJA 			= VK_HANJA, // IME Hanja mode
+		KANJI 			= VK_KANJI, // IME Kanji mode
+		IME_OFF 		= VK_IME_OFF, // IME Off
+		Escape 			= VK_ESCAPE, // ESC key
+		ESC 			= VK_ESCAPE, // ESC key
+		CONVERT 		= VK_CONVERT, // IME Convert
+		NONCONVERT 		= VK_NONCONVERT, // IME Non-convert
+		ACCEPT 			= VK_ACCEPT, // IME Accept
+		MODECHANGE 		= VK_MODECHANGE, // IME mode change request
+		Space 			= VK_SPACE, // Spacebar key
+		Prior 			= VK_PRIOR, // Page Up key
+		PAGE_UP 		= VK_PRIOR, // Page Up key
+		Next 			= VK_NEXT, // Page Down key
+		PAGE_DOWN 		= VK_NEXT, // Page Down key
+		End 			= VK_END, // End key
+		Home 			= VK_HOME, // Home key
+		Left 			= VK_LEFT, // Left arrow key
+		Up 				= VK_UP, // Up arrow key
+		Right 			= VK_RIGHT, // Right arrow key
+		Down 			= VK_DOWN, // Down arrow key
+		Select 			= VK_SELECT, // Select key
+		Print 			= VK_PRINT, // Print key
+		Execute 		= VK_EXECUTE, // Execute key
+		Snapshot 		= VK_SNAPSHOT, // Print Screen key
+		PRINT_SCREEN 	= VK_SNAPSHOT, // Print Screen key
+		Insert 			= VK_INSERT, // INS key
+		INS 			= VK_INSERT, // INS key
+		Delete 			= VK_DELETE, // Delete key
+		DEL 			= VK_DELETE, // Delete key
+		Help 			= VK_HELP, // Help key
+		Zero 			= 0x30, // 0 key
+		D0 				= 0x31, // 1 key
+		D2			 	= 0x32, // 2 key
+		D3 				= 0x33, // 3 key
+		D4 				= 0x34, // 4 key
+		D5 				= 0x35, // 5 key
+		D6 				= 0x36, // 6 key
+		D7 				= 0x37, // 7 key
+		D8 				= 0x38, // 8 key
+		D9 				= 0x39, // 9 key
+		A 				= 0x41, // A key
+		B 				= 0x42, // B key
+		C 				= 0x43, // C key
+		D 				= 0x44, // D key
+		E 				= 0x45, // E key
+		F 				= 0x46, // F key
+		G			 	= 0x47, // G key
+		H 				= 0x48, // H key
+		I 				= 0x49, // I key
+		J 				= 0x4A, // J key
+		K 				= 0x4B, // K key
+		L 				= 0x4C, // L key
+		M 				= 0x4D, // M key
+		N 				= 0x4E, // N key
+		O 				= 0x4F, // O key
+		P 				= 0x50, // P key
+		Q 				= 0x51, // Q key
+		R 				= 0x52, // R key
+		S 				= 0x53, // S key
+		T 				= 0x54, // T key
+		U 				= 0x55, // U key
+		V 				= 0x56, // V key
+		W 				= 0x57, // W key
+		X 				= 0x58, // X key
+		Y 				= 0x59, // Y key
+		Z 				= 0x5A, // Z key
+		LWIN 			= VK_LWIN, // Left Windows key
+		RWIN 			= VK_RWIN, // Right Windows key
+		APPS 			= VK_APPS, // Applications key
+		Sleep 			= VK_SLEEP, // Computer sleep key
+		NumPad0 		= VK_NUMPAD0, // Numeric keypad 0
 		NumPad1 = VK_NUMPAD1, // Numeric keypad 1
 		NumPad2 = VK_NUMPAD2, // Numeric keypad 2
 		NumPad3 = VK_NUMPAD3, // Numeric keypad 3
@@ -437,6 +443,8 @@ namespace UltReality::Utilities
 		VolMute = VK_VOLUME_MUTE, // Volume mute key
 		VolDown = VK_VOLUME_DOWN, // Volume down key
 		VolUp = VK_VOLUME_UP, // Volume up key
+#elif defined(_LINUX_TARGET)
+		
 #endif
 	};
 
