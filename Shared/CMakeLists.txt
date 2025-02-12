@@ -10,6 +10,8 @@ message(STATUS "UTILITIES_SHARED_VERBOSE: ${UTILITIES_SHARED_VERBOSE}")
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 
+option(UTILITIES_SHARED_DEBUG "Enable CMake related debug messages" OFF)
+
 # Create list of all source files to be used in this target
 file(GLOB_RECURSE UtilitiesShared_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*/src/*.cpp")
 file(GLOB Shared_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
@@ -35,7 +37,9 @@ if(UTILITIES_SHARED_BUILD)
 
 		foreach(dir ${Shared_DIRS})
 			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
-				#message(STATUS "Adding include directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				if(UTILITIES_SHARED_DEBUG)	
+					message(STATUS "Adding include directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				endif()
 				target_include_directories(UtilitiesShared PUBLIC 
 					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include> 
  					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}> # This is used when the library is installed
@@ -43,7 +47,9 @@ if(UTILITIES_SHARED_BUILD)
 			endif()
 
 			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
-				#message(STATUS "Adding inl directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				if(UTILITIES_SHARED_DEBUG)
+					message(STATUS "Adding inl directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				endif()
 				target_include_directories(UtilitiesShared PUBLIC 
 					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl> 
  					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}> # This is used when the library is installed
@@ -174,22 +180,33 @@ endif()
 
 # Create Unit Test Groups *************************************************************************
 #**************************************************************************************************
-if (Utilities_BUILD_TESTS)
-	set(SHARED_TESTS_DIRS "")
+if (UTILITIES_BUILD_TESTS)
+	if(UTILITIES_SHARED_DEBUG)
+		message(STATUS "Building test suit for Utilities Shared")
+	endif()
 
-	foreach(dir ${Shared_DIRS})
+	set(STATIC_TESTS_DIRS "")
+
+	foreach(dir ${Static_DIRS})
 		if(IS_DIRECTORY "${dir}/tests")
-			list(APPEND SHARED_TESTS_DIRS "${dir}/tests")
+			list(APPEND STATIC_TESTS_DIRS "${dir}/tests")
 		endif()
+		if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/tests")
+				if(UTILITIES_SHARED_DEBUG)	
+					message(STATUS "Adding test directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/tests")
+				endif()
+				list(APPEND STATIC_TESTS_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/tests")
+			endif()
 	endforeach()
-
-	#message(STATUS ${TESTS_DIRS})
 
 	# Do not install GTest when packaging Utilities targets
 	set(INSTALL_GTEST OFF)
 	
 	# Add all the tests directories
-	foreach(tests_dir ${SHARED_TESTS_DIRS})
+	foreach(tests_dir ${STATIC_TESTS_DIRS})
+		if(UTILITIES_SHARED_DEBUG)
+			message(STATUS "Adding Sub-Directory: ${tests_dir}")
+		endif()
 		add_subdirectory("${tests_dir}")
 	endforeach()
 endif()

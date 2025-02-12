@@ -30,7 +30,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Create options that are dependent onthis project being top level
-option(Utilities_BUILD_TESTS "Build the test suit" ${PROJECT_IS_TOP_LEVEL})
+option(UTILITIES_BUILD_TESTS "Build the test suit" ${PROJECT_IS_TOP_LEVEL})
 
 include(GNUInstallDirs)
 
@@ -73,28 +73,30 @@ generate_from_template(${CONFIG_TEMPLATES_DIR}/src ${GENERATED_SRC_DIR} cpp)
 # End Generated Source ****************************************************************************
 #**************************************************************************************************
 
-# Target Creation *********************************************************************************
+# Create Global Properties ************************************************************************
+#**************************************************************************************************
+
+if(UTILITIES_BUILD_TESTS)
+	# Create a set for build all unit tests
+	set_property(GLOBAL PROPERTY UNIT_TEST_TARGETS "")
+	set_property(GLOBAL PROPERTY UNIT_TEST_SOURCES "")
+endif()
+
+# End Create Global Properties ********************************************************************
+#**************************************************************************************************
+
+# Add Sub-Directories *****************************************************************************
 #**************************************************************************************************
 
 add_subdirectory(Shared)
 add_subdirectory(Static)
 
-# End Target Creation *****************************************************************************
-#**************************************************************************************************
-
-# Installation and Packing Configuration **********************************************************
-#**************************************************************************************************
-
-# End Installation and Packing Configuration ******************************************************
+# End Add Sub-Directories *************************************************************************
 #**************************************************************************************************
 
 # Create Unit Test Groups *************************************************************************
 #**************************************************************************************************
-if (Utilities_BUILD_TESTS)
-	# Create a set for build all unit tests
-	set_property(GLOBAL PROPERTY UNIT_TEST_TARGETS "")
-	set_property(GLOBAL PROPERTY UNIT_TEST_SOURCES "")
-
+if (UTILITIES_BUILD_TESTS)
 	get_property(test_targets GLOBAL PROPERTY UNIT_TEST_TARGETS)
 	if(test_targets)
 		# Create a custom target for all tests
@@ -106,7 +108,7 @@ if (Utilities_BUILD_TESTS)
 		# Create an executable for the custom target, such that the IDEs can see it as a runnable target
 		add_executable(run_all_unit_tests EXCLUDE_FROM_ALL ${test_source})
 		# Link the executable with GTest and the TokenValueParser library
-		target_link_libraries(run_all_unit_tests PRIVATE GTest::gtest_main GenParseBase GenParseCmdLine)
+		target_link_libraries(run_all_unit_tests PRIVATE GTest::gtest_main UtilitiesShared UtilitiesStatic)
 		set_target_properties(run_all_unit_tests PROPERTIES INSTALLABLE OFF)
 	endif()
 endif()

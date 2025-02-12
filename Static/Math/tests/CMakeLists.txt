@@ -19,7 +19,7 @@ set(Math_UnitTest_TARGETS)
 # Get a list of the .cpp files in the subdirectory for the unit tests
 file(GLOB_RECURSE Math_UnitTest_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unit/*.cpp")
 
-list(APPEND existing_sources ${Math_UnitTest_Sources})
+list(APPEND existing_sources ${Math_UnitTest_SOURCES})
 
 set_property(GLOBAL PROPERTY UNIT_TEST_SOURCES "${existing_sources}")
 
