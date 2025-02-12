@@ -3,8 +3,8 @@ libdir=@LIBDIR_FOR_PKG_CONFIG@
 includedir=@INCLUDEDIR_FOR_PKG_CONFIG@
 
 Name: @PROJECT_NAME@
-Description: Agnostic system for window creation and use in rendering
-URL: https://github.com/Ultimate-Reality-Game-Engine/Display-Target
+Description: Collection of Utilities for the Ultimate Reality Game engine packaged as a static library
+URL: https://github.com/Ultimate-Reality-Game-Engine/Utilities
 Version: @PROJECT_VERSION@
 Cflags: -I${includedir}
-Libs: -lDisplayTarget
+Libs: -lUtilitiesStatic
