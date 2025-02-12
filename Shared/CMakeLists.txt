@@ -10,18 +10,9 @@ message(STATUS "UTILITIES_SHARED_VERBOSE: ${UTILITIES_SHARED_VERBOSE}")
 
 # Create list of all source files to be used in this target
 file(GLOB_RECURSE UtilitiesShared_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*/src/*.cpp")
-file(GLOB_RECURSE Shared_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
+file(GLOB Shared_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
-set(UtilitiesShared_HEADERS "")
-foreach(dir ${Shared_DIRS})
-	if(IS_DIRECTORY "${dir}/include")
-		list(APPEND UtilitiesShared_HEADERS "${dir}/include")
-	endif()
-endforeach()
-list(APPEND UtilitiesShared_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include")
-
-#message(STATUS ${UtilitiesShared_SOURCE})
-#message(STATUS ${UtilitiesShared_HEADERS})
+#message(STATUS "Shared_DIRS: ${Shared_DIRS}")
 
 if(NOT DEFINED UTILITIES_SHARED_BUILD)
 	set(UTILITIES_SHARED_BUILD ON)
@@ -35,11 +26,27 @@ if(UTILITIES_SHARED_BUILD)
 		target_compile_definitions(UtilitiesShared PRIVATE LIBRARY_EXPORTS)
 
 		# Set up include directories for the shared library target
-		foreach(header_dir ${UtilitiesShared_HEADERS})
-			target_include_directories(UtilitiesShared PUBLIC 
-				$<BUILD_INTERFACE:${header_dir}> 
- 				$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # This is used when the library is installed
-			)
+		target_include_directories(UtilitiesShared PUBLIC 
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  # Add Shared/include explicitly
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared> # Install it at the top-level include
+		)
+
+		foreach(dir ${Shared_DIRS})
+			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				#message(STATUS "Adding include directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				target_include_directories(UtilitiesShared PUBLIC 
+					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include> 
+ 					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}> # This is used when the library is installed
+				)
+			endif()
+
+			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				#message(STATUS "Adding inl directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				target_include_directories(UtilitiesShared PUBLIC 
+					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl> 
+ 					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}> # This is used when the library is installed
+				)
+			endif()
 		endforeach()
 
 		# Link libraries to the target
@@ -80,33 +87,49 @@ install(
 	EXPORT UtilitiesShared_Targets 
 	FILE UtilitiesShared_Targets.cmake 
 	NAMESPACE UltReality:: 
-	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesShared/cmake
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesShared
 )
 
 # Install the actual includes
 install(
-	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared"
 )
+
+foreach(dir ${Shared_DIRS})
+    if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+        install(
+            DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include/"
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}"
+        )
+    endif()
+
+	if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+        install(
+            DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl/"
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesShared/${dir}"
+        )
+    endif()
+endforeach()
 
 # Generate and install the package version config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"UtilitiesShared_ConfigVersion.cmake" 
+	"Utilities_Shared_ConfigVersion.cmake" 
 	VERSION ${PROJECT_VERSION} 
 	COMPATIBILITY SameMajorVersion
 )
 configure_package_config_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Shared_Config.cmake.in" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Shared_Config.cmake" 
-	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesShared/cmake
+	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesShared
 )
 
 # Install the CMake config files
 install(
 	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Shared_ConfigVersion.cmake" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Shared_Config.cmake" 
-	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesShared/cmake
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesShared
 )
 
 # Define Package install paths

@@ -9,21 +9,10 @@ message(STATUS "UTILITIES_STATIC_VERBOSE: ${UTILITIES_STATIC_VERBOSE}")
 #**************************************************************************************************
 
 file(GLOB_RECURSE UtilitiesStatic_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*/src/*.cpp")
-file(GLOB_RECURSE Static_DIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
+file(GLOB Static_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
-set(UtilitiesStatic_HEADERS "")
-foreach(dir ${Static_DIRS})
-	if(IS_DIRECTORY "${dir}/include")
-		list(APPEND UtilitiesStatic_HEADERS "${dir}/include")
-	endif()
-
-	if(IS_DIRECTORY "${dir}/inl")
-		list(APPEND UtilitiesStatic_HEADERS "${dir}/inl")
-	endif()
-endforeach()
-
+#message(STATUS "Static_DIRS: ${Static_DIRS}")
 #message(STATUS ${UtilitiesStatic_SOURCE})
-#message(STATUS ${UtilitiesStatic_HEADERS})
 
 if(NOT DEFINED UTILITIES_STATIC_BUILD)
 	set(UTILITIES_STATIC_BUILD ON)
@@ -35,11 +24,22 @@ if(UTILITIES_STATIC_BUILD)
 		add_library(UtilitiesStatic STATIC ${UtilitiesStatic_SOURCE})
 
 		# Set up include directories for the shared library target
-		foreach(header_dir ${UtilitiesStatic_HEADERS})
-			target_include_directories(UtilitiesStatic PUBLIC 
-				$<BUILD_INTERFACE:${header_dir}> 
- 				$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> # This is used when the library is installed
-			)
+		foreach(dir ${Static_DIRS})
+			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				#message(STATUS "Adding include directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+				target_include_directories(UtilitiesStatic PUBLIC 
+					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include> 
+ 					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesStatic/${dir}> # This is used when the library is installed
+				)
+			endif()
+
+			if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				#message(STATUS "Adding inl directory: ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+				target_include_directories(UtilitiesStatic PUBLIC 
+					$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl> 
+ 					$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesStatic/${dir}> # This is used when the library is installed
+				)
+			endif()
 		endforeach()
 
 		# Link libraries to the target
@@ -74,33 +74,44 @@ install(
 	EXPORT UtilitiesStatic_Targets 
 	FILE UtilitiesStatic_Targets.cmake 
 	NAMESPACE UltReality:: 
-	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesStatic
 )
 
 # Install the actual includes
-install(
-	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+foreach(dir ${Static_DIRS})
+    if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include")
+        install(
+            DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include/"
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesStatic/${dir}"
+        )
+    endif()
+
+	if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl")
+        install(
+            DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/inl/"
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/UtilitiesStatic/${dir}"
+        )
+    endif()
+endforeach()
 
 # Generate and install the package version config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"UtilitiesStatic_ConfigVersion.cmake" 
+	"Utilities_Static_ConfigVersion.cmake" 
 	VERSION ${PROJECT_VERSION} 
 	COMPATIBILITY SameMajorVersion
 )
 configure_package_config_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Static_Config.cmake.in" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
-	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesStatic
 )
 
 # Install the CMake config files
 install(
 	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_ConfigVersion.cmake" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
-	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesStatic
 )
 
 # Define Package install paths
