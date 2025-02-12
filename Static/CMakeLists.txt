@@ -1,5 +1,10 @@
 # CMakeList.txt : UltReality::Utilities::Static
 
+# Create options that are dependent onthis project being top level
+option(UTILITIES_STATIC_VERBOSE "Enable verbose messages for UtilitiesStatic" ${PROJECT_IS_TOP_LEVEL})
+
+message(STATUS "UTILITIES_STATIC_VERBOSE: ${UTILITIES_STATIC_VERBOSE}")
+
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 

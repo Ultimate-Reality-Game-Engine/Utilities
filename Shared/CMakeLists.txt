@@ -1,5 +1,10 @@
 # CMakeList.txt : UltReality::Utilities::Shared
 
+# Create options that are dependent onthis project being top level
+option(UTILITIES_SHARED_VERBOSE "Enable verbose messages for UtilitiesShared" ${PROJECT_IS_TOP_LEVEL})
+
+message(STATUS "UTILITIES_SHARED_VERBOSE: ${UTILITIES_SHARED_VERBOSE}")
+
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 
