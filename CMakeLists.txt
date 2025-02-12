@@ -96,7 +96,7 @@ add_subdirectory(Static)
 
 # Create Unit Test Groups *************************************************************************
 #**************************************************************************************************
-if (UTILITIES_BUILD_TESTS)
+if(UTILITIES_BUILD_TESTS)
 	get_property(test_targets GLOBAL PROPERTY UNIT_TEST_TARGETS)
 	if(test_targets)
 		# Create a custom target for all tests
