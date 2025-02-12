@@ -1,5 +1,10 @@
 # CMakeList.txt : UltReality::Utilities::Static
 
+# Create options that are dependent onthis project being top level
+option(UTILITIES_STATIC_VERBOSE "Enable verbose messages for UtilitiesStatic" ${PROJECT_IS_TOP_LEVEL})
+
+message(STATUS "UTILITIES_STATIC_VERBOSE: ${UTILITIES_STATIC_VERBOSE}")
+
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 
@@ -52,81 +57,83 @@ endif()
 
 # Installation and Packing Configuration **********************************************************
 #**************************************************************************************************
-if(Utilities_INSTALL)
-	# Install the targets
-	install(
-		TARGETS UtilitiesStatic
-		EXPORT UtilitiesStatic_Targets 
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # Static libraries/import libraries (.lib files for .dll linking) 
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # Shared libraries (.so) 
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # .exe or .dll 
-		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PUBLIC 
-		PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PRIVATE
-	)
 
-	# Create the targets CMake file which contains the above definitions
-	install(
-		EXPORT UtilitiesStatic_Targets 
-		FILE UtilitiesStatic_Targets.cmake 
-		NAMESPACE UltReality:: 
-		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
-	)
+# Install the targets
+install(
+	TARGETS UtilitiesStatic
+	EXPORT UtilitiesStatic_Targets 
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # Static libraries/import libraries (.lib files for .dll linking) 
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # Shared libraries (.so) 
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # .exe or .dll 
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PUBLIC 
+	PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PRIVATE
+)
 
-	# Install the actual includes
-	install(
-		DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-	)
+# Create the targets CMake file which contains the above definitions
+install(
+	EXPORT UtilitiesStatic_Targets 
+	FILE UtilitiesStatic_Targets.cmake 
+	NAMESPACE UltReality:: 
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+)
 
-	# Generate and install the package version config files
-	include(CMakePackageConfigHelpers)
-	write_basic_package_version_file(
-		"UtilitiesStatic_ConfigVersion.cmake" 
-		VERSION ${PROJECT_VERSION} 
-		COMPATIBILITY SameMajorVersion
-	)
-	configure_package_config_file(
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Static_Config.cmake.in" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
-		INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
-	)
+# Install the actual includes
+install(
+	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-	# Install the CMake config files
-	install(
-		FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_ConfigVersion.cmake" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
-		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
-	)
+# Generate and install the package version config files
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+	"UtilitiesStatic_ConfigVersion.cmake" 
+	VERSION ${PROJECT_VERSION} 
+	COMPATIBILITY SameMajorVersion
+)
+configure_package_config_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Static_Config.cmake.in" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
+	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+)
 
-	# Define Package install paths
-	set(INCLUDEDIR_FOR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-	set(LIBDIR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+# Install the CMake config files
+install(
+	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_ConfigVersion.cmake" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static_Config.cmake" 
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/UtilitiesStatic/cmake
+)
 
-	# Create and install the package config file
-	configure_file(
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Static.pc.in" 
-		"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static.pc" @ONLY
-	)
+# Define Package install paths
+set(INCLUDEDIR_FOR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+set(LIBDIR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
-	# Install the package config file
-	install(
-		FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static.pc" 
-		DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-	)
+# Create and install the package config file
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Static.pc.in" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static.pc" @ONLY
+)
 
-	# A version that is often used to denote a specific build of the software, including revisions, builds, or other metadata
-	set(PACKAGE_VERSION_BUILD "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
+# Install the package config file
+install(
+	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_Static.pc" 
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
-	set(PACKAGE_VERSION "${PROJECT_VERSION}-${PACKAGE_VERSION_BUILD}")
+# A version that is often used to denote a specific build of the software, including revisions, builds, or other metadata
+set(PACKAGE_VERSION_BUILD "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
 
-	set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/out/package")
+set(PACKAGE_VERSION "${PROJECT_VERSION}-${PACKAGE_VERSION_BUILD}")
 
-	set(CPACK_PACKAGE_NAME "UtilitiesStatic")
-	set(CPACK_PACKAGE_VERSION "${PACKAGE_VERSION}")
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/out/package")
 
-	set(CPACK_PACKAGE_VENDOR "Andrew Todd")
-	set(CPACK_PACKAGE_CONTACT "andrewdanieltodd@gmail.com")
-	include(CPack)
+set(CPACK_PACKAGE_NAME "UtilitiesStatic")
+set(CPACK_PACKAGE_VERSION "${PACKAGE_VERSION}")
+
+set(CPACK_PACKAGE_VENDOR "Andrew Todd")
+set(CPACK_PACKAGE_CONTACT "andrewdanieltodd@gmail.com")
+include(CPack)
+
+if(UTILITIES_STATIC_VERBOSE)
 	message(STATUS "PACKAGE_VERSION is: ${PACKAGE_VERSION}")
 	message(STATUS "PACKAGE_FILE_NAME is: ${CPACK_PACKAGE_FILE_NAME}")
 endif()

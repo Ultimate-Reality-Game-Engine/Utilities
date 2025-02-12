@@ -30,7 +30,6 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Create options that are dependent onthis project being top level
-option(Utilities_INSTALL "Enable project install" ${PROJECT_IS_TOP_LEVEL})
 option(Utilities_BUILD_TESTS "Build the test suit" ${PROJECT_IS_TOP_LEVEL})
 
 include(GNUInstallDirs)
