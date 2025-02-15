@@ -10,7 +10,7 @@ message(STATUS "UTILITIES_STATIC_VERBOSE: ${UTILITIES_STATIC_VERBOSE}")
 # Target Creation *********************************************************************************
 #**************************************************************************************************
 
-option(UTILITIES_STATIC_DEBUG "Enable CMake related debug messages" ON)
+option(UTILITIES_STATIC_DEBUG "Enable CMake related debug messages" OFF)
 
 file(GLOB_RECURSE UtilitiesStatic_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/*/src/*.cpp")
 file(GLOB Static_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
