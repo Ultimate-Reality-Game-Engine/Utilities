@@ -15,4 +15,6 @@ namespace UltReality::Math
 	VECTOR SphericalToCartesian(float radius, float theta, float phi);
 }
 
+#include <CoorinateSystems.inl>
+
 #endif // !ULTREALITY_MATH_COORDINATE_SYSTEMS_H

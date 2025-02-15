@@ -9,7 +9,7 @@
 #define FORCE_INLINE inline
 #endif
 
-#include <math.h>
+#include <cmath>
 #include <assert.h>
 
 #include <Constants.h>
@@ -176,8 +176,157 @@ namespace UltReality::Math
         return sign * p;
     }
 
+    // High-accuracy tangent polynomial approximation (11-degree minimax)
+    // Approximates tan(x) for x in [-pi/4, pi/4]
+    static inline float tanPolynomial(float x) noexcept
+    {
+        // Precompute powers (tan is an odd function)
+        float x2 = x * x;
+        float x3 = x * x2;
+        float x5 = x3 * x2;
+        float x7 = x5 * x2;
+        float x9 = x7 * x2;
+        float x11 = x9 * x2;
+        // Using coefficients similar to the Taylor expansion:
+        // tan(x) ~ x + x^3/3 + (2x^5)/15 + (17x^7)/315 + (62x^9)/2835 + (1382x^11)/155925
+        return x
+            + 0.3333333333f * x3
+            + 0.1333333333f * x5
+            + 0.053968254f * x7
+            + 0.021854f * x9
+            + 0.008863f * x11;
+    }
+
+    // Estimated tangent polynomial approximation (7-degree minimax)
+    static inline float tanPolynomialEst(float x) noexcept
+    {
+        float x2 = x * x;
+        float x3 = x * x2;
+        float x5 = x3 * x2;
+        float x7 = x5 * x2;
+        return x
+            + 0.3333333333f * x3
+            + 0.1333333333f * x5
+            + 0.053968254f * x7;
+    }
+
+    // Helper: Reduce an angle modulo pi so that the result is in [-pi/2, pi/2]
+    // (tan has period pi)
+    static inline float reduceTanAngle(float x) noexcept
+    {
+        // Round to nearest integer k, then subtract k*pi.
+        int k = static_cast<int>(std::round(x / _PI));
+        return x - k * _PI;
+    }
+
+    // High-accuracy ScalarTan implementation
+    FORCE_INLINE float ScalarTan(float x) noexcept
+    {
+        // Step 1: Reduce x to [-pi/2, pi/2]
+        float xr = reduceTanAngle(x);
+        // Step 2: Further restrict to [-pi/4, pi/4] for the polynomial.
+        // For |xr| > pi/4, use the identity:
+        //    tan(x) = sign(x) * (1 / tan(pi/2 - |x|))
+        if (std::fabs(xr) > (_PIOVER2 * 0.5f)) // i.e. |xr| > pi/4
+        {
+            float sign = (xr >= 0.0f) ? 1.0f : -1.0f;
+            float y = _PIOVER2 - std::fabs(xr);
+            // Avoid division by zero near the asymptote.
+            if (std::fabs(y) < 1e-6f)
+            {
+                return sign * 1e30f; // a large number to indicate asymptotic behavior
+            }
+            return sign / tanPolynomial(y);
+        }
+        else
+        {
+            return tanPolynomial(xr);
+        }
+    }
+
+    // Estimated version of ScalarTan (using the 7-degree polynomial)
+    FORCE_INLINE float ScalarTanEst(float x) noexcept
+    {
+        float xr = reduceTanAngle(x);
+        if (std::fabs(xr) > (_PIOVER2 * 0.5f))
+        {
+            float sign = (xr >= 0.0f) ? 1.0f : -1.0f;
+            float y = _PIOVER2 - std::fabs(xr);
+            if (std::fabs(y) < 1e-6f)
+            {
+                return sign * 1e30f;
+            }
+            return sign / tanPolynomialEst(y);
+        }
+        else
+        {
+            return tanPolynomialEst(xr);
+        }
+    }
+
+    //--------------------------------------------------
+    // ATAN IMPLEMENTATION
+    //--------------------------------------------------
+
+    // High-accuracy arctan polynomial approximation (11-degree minimax)
+    // Approximates atan(x) for x in [0, 1]
+    static inline float atanPolynomial(float x) noexcept
+    {
+        float x2 = x * x;
+        float x3 = x * x2;
+        float x5 = x3 * x2;
+        float x7 = x5 * x2;
+        float x9 = x7 * x2;
+        float x11 = x9 * x2;
+        // Using coefficients from the Taylor series for arctan:
+        // atan(x) ~ x - x^3/3 + x^5/5 - x^7/7 + x^9/9 - x^11/11
+        return x
+            - (x3) / 3.0f
+            + (x5) / 5.0f
+            - (x7) / 7.0f
+            + (x9) / 9.0f
+            - (x11) / 11.0f;
+    }
+
+    // Estimated arctan polynomial approximation (7-degree minimax)
+    static inline float atanPolynomialEst(float x) noexcept
+    {
+        float x2 = x * x;
+        float x3 = x * x2;
+        float x5 = x3 * x2;
+        float x7 = x5 * x2;
+        return x
+            - (x3) / 3.0f
+            + (x5) / 5.0f
+            - (x7) / 7.0f;
+    }
+
+    // High-accuracy ScalarATan implementation
+    FORCE_INLINE float ScalarATan(float x) noexcept
+    {
+        // arctan is an odd function
+        if (x < 0.0f)
+            return -ScalarATan(-x);
+        // For x > 1, use the identity:
+        //    atan(x) = pi/2 - atan(1/x)
+        if (x > 1.0f)
+            return _PIOVER2 - ScalarATan(1.0f / x);
+        // Now x is in [0, 1]
+        return atanPolynomial(x);
+    }
+
+    // Estimated version of ScalarATan (using the 7-degree polynomial)
+    FORCE_INLINE float ScalarATanEst(float x) noexcept
+    {
+        if (x < 0.0f)
+            return -ScalarATanEst(-x);
+        if (x > 1.0f)
+            return _PIOVER2 - ScalarATanEst(1.0f / x);
+        return atanPolynomialEst(x);
+    }
+
     _Use_decl_annotations_
-        FORCE_INLINE void ScalarSineCos(float* pSine, float* pCos, float value) noexcept
+    FORCE_INLINE void ScalarSineCos(float* pSine, float* pCos, float value) noexcept
     {
 #if defined(DEBUG) || defined(_DEBUG)
         assert(pSine != nullptr);
@@ -224,7 +373,7 @@ namespace UltReality::Math
     }
 
     _Use_decl_annotations_
-        FORCE_INLINE void ScalarSineCosEst(float* pSine, float* pCos, float value) noexcept
+    FORCE_INLINE void ScalarSineCosEst(float* pSine, float* pCos, float value) noexcept
     {
 #if defined(DEBUG) || defined(_DEBUG)
         assert(pSine != nullptr);

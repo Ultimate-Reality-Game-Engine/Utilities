@@ -27,7 +27,7 @@ namespace UltReality::Math
 	struct Float4;
 
 	_Use_decl_annotations_
-		FORCE_INLINE MATRIX::MATRIX(const float* pArray) noexcept
+	FORCE_INLINE MATRIX::MATRIX(const float* pArray) noexcept
 	{
 #if defined(DEBUG) || defined(_DEBUG)
 		assert(pArray != nullptr);
@@ -75,8 +75,8 @@ namespace UltReality::Math
 
 		return *this;
 	}
-
-	FORCE_INLINE MATRIX& VEC_CALLCONV MATRIX::operator*=(float s) noexcept
+	
+	FORCE_INLINE MATRIX& MATRIX::operator*=(float s) noexcept
 	{
 		r[0] = Vector::Scale(r[0], s);
 		r[1] = Vector::Scale(r[1], s);
@@ -86,7 +86,7 @@ namespace UltReality::Math
 		return *this;
 	}
 
-	FORCE_INLINE MATRIX& VEC_CALLCONV MATRIX::operator/=(float s) noexcept
+	FORCE_INLINE MATRIX& MATRIX::operator/=(float s) noexcept
 	{
 #if defined(_NO_INTRINSICS_)
 		VECTOR vS = Vector::Replicate(s);
@@ -992,6 +992,18 @@ namespace UltReality::Math
 			
 			return mResult;
 #endif
+		}
+
+		FORCE_INLINE MATRIX VEC_CALLCONV InverseTranspose(A_MATRIX m) noexcept
+		{
+			// Inverse-transpose is just applied to normals.  So zero out 
+			// translation row so that it doesn't get into our inverse-transpose
+			// calculation--we don't want the inverse-transpose of the translation.
+			MATRIX A = m;
+			A.r[3] = Vector::Set(0.0f, 0.0f, 0.0f, 1.0f);
+
+			VECTOR det = Matrix::Determinant(A);
+			return Matrix::Transpose(Matrix::Inverse(&det, A));
 		}
 
 		FORCE_INLINE MATRIX VEC_CALLCONV VectorTensorProduct(A_VECTOR V1, A_VECTOR V2) noexcept

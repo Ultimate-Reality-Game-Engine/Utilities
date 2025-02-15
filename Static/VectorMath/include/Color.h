@@ -1,9 +1,8 @@
 #ifndef ULTREALITY_MATH_COLOR_H
 #define ULTREALITY_MATH_COLOR_H
 
-#include <SIMDVectorConfig.h>
-#include <Float3.h>
-#include <Float4.h>
+#include <SIMDVector.h>
+#include <VectorTypes.h>
 
 namespace UltReality::Math
 {

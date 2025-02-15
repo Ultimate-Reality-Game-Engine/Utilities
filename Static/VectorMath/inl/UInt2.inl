@@ -147,9 +147,10 @@ namespace UltReality::Math
 
 			// Any numbers that are too large, set to 0x7FFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
-			
+			VECTOR vValue = g_UnsignedFix;
+
 			// Detect elements too large for signed int
-			VECTOR vMask = _mm_cmpe_ps(vResult, g_UnsignedFix);
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
 
 			// Zero numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);
@@ -188,9 +189,10 @@ namespace UltReality::Math
 
 			// Any numbers that are too large, set to 0x7FFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
+			VECTOR vValue = g_UnsignedFix;
 
 			// Detect elements too large for signed int
-			VECTOR vMask = _mm_cmpe_ps(vResult, g_UnsignedFix);
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
 
 			// Zero numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);

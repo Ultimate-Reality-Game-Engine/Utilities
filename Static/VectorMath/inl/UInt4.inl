@@ -12,7 +12,7 @@
 namespace UltReality::Math
 {
 	_Use_decl_annotations_
-	FORCE_INLINE UInt4(A_VECTOR v) noexcept
+	FORCE_INLINE UInt4::UInt4(A_VECTOR v) noexcept
 	{
 		Vector::StoreUInt4(this, v);
 	}
@@ -59,8 +59,6 @@ namespace UltReality::Math
 	FORCE_INLINE void VEC_CALLCONV AUInt4::Store(A_VECTOR v) noexcept
 	{
 		Vector::StoreAUInt4(this, v);
-
-		return *this;
 	}
 
 	namespace Vector
@@ -161,11 +159,12 @@ namespace UltReality::Math
 
 			// Any element that is too big, set to 0xFFFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
-			
-			// Find elements too large for signed integer
-			VECTOR vMask = _mm_cmpge_ps(vResult, g_UnsignedFix);
+			VECTOR vValue = g_UnsignedFix;
 
-			// Zero for nubbers lower than 0x80000000, 32768.0f*65536.0f otherwise
+			// Find elements too large for signed integer
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
+
+			// Zero for numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);
 
 			// Perform fix only on elements that are too large
@@ -202,11 +201,12 @@ namespace UltReality::Math
 
 			// Any element that is too big, set to 0xFFFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
+			VECTOR vValue = g_UnsignedFix;
 
 			// Find elements too large for signed integer
-			VECTOR vMask = _mm_cmpge_ps(vResult, g_UnsignedFix);
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
 
-			// Zero for nubbers lower than 0x80000000, 32768.0f*65536.0f otherwise
+			// Zero for numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);
 
 			// Perform fix only on elements that are too large

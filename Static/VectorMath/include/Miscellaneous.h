@@ -1,9 +1,8 @@
 #ifndef ULTREALITY_MATH_MISCELLANEOUS_H
 #define ULTREALITY_MATH_MISCELLANEOUS_H
 
-#include <SIMDVectorConfig.h>
-#include <VectorMathConstants.h>
-#include <Float4.h>
+#include <SIMDVector.h>
+#include <VectorTypes.h>
 
 namespace UltReality::Math
 {

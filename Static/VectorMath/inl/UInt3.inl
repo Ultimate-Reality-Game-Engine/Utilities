@@ -103,7 +103,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		_Use_dec_annotations_
+		_Use_decl_annotations_
 		FORCE_INLINE VECTOR VEC_CALLCONV LoadAUInt3(const AUInt3* pSource) noexcept
 		{
 #if defined(DEBUG) || defined(_DEBUG)
@@ -162,9 +162,10 @@ namespace UltReality::Math
 
 			// Elements that are too but, set to 0xFFFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
-			
+			VECTOR vValue = g_UnsignedFix;
+
 			// Check for elements too large for signed integer
-			VECTOR vMask = _mm_cmpge_ps(vResult, g_UnsignedFix);
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
 
 			// Zero for numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);
@@ -206,9 +207,10 @@ namespace UltReality::Math
 
 			// Elements that are too but, set to 0xFFFFFFFFU
 			VECTOR vOverflow = _mm_cmpgt_ps(vResult, g_MaxUInt);
+			VECTOR vValue = g_UnsignedFix;
 
 			// Check for elements too large for signed integer
-			VECTOR vMask = _mm_cmpge_ps(vResult, g_UnsignedFix);
+			VECTOR vMask = _mm_cmpge_ps(vResult, vValue);
 
 			// Zero for numbers lower than 0x80000000, 32768.0f*65536.0f otherwise
 			vValue = _mm_and_ps(vValue, vMask);

@@ -101,7 +101,7 @@ namespace UltReality::Math
 
 			return V;
 #elif defined(_SSE2_INTRINSICS_)
-			// Use alinged load for 16-byte aligned AInt2
+			// Use aligned load for 16-byte aligned AInt2
 			__m128i V = _mm_load_si128(reinterpret_cast<const __m128i*>(pSource));
 			// Convert 32-bit integers to 32-bit floats
 			return _mm_cvtepi32_ps(V);

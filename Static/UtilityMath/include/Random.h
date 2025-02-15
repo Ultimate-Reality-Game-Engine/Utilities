@@ -40,50 +40,50 @@ namespace UltReality::Math
 		/// <summary>
 		/// Return a random unsinged integer using the internal XORshift32
 		/// </summary>
-		uint32_t RandomUInt();
+		uint32_t UInt();
 
 		/// <summary>
 		/// Return a random unsinged integer in the range of [min, max] using the internal XORshift
 		/// </summary>
 		/// <param name="min">Lower end of range, inclusive</param>
 		/// <param name="max">Upper end of range, inclusive</param>
-		uint32_t RandomUInt(uint32_t min, uint32_t max);
+		uint32_t UInt(uint32_t min, uint32_t max);
 
 		/// <summary>
 		/// Return a random integer using the internal XORshift
 		/// </summary>
-		int32_t RandomInt();
+		int32_t Int();
 
 		/// <summary>
 		/// Return a random integer in the range of [min, max] using the internal XORshift
 		/// </summary>
 		/// <param name="min">Lower end of range, inclusive</param>
 		/// <param name="max">Upper end of range, inclusive</param>
-		int32_t RandomInt(int32_t min, int32_t max);
+		int32_t Int(int32_t min, int32_t max);
 
 		/// <summary>
 		/// Return a random float in the range of [0, 1) using the internal XORshift
 		/// </summary>
-		float RandomFloat();
+		float Float();
 
 		/// <summary>
 		/// Return a random float in the range of [min, max) using the internal XORshift
 		/// </summary>
 		/// <param name="min">Lower end of range, inclusive</param>
 		/// <param name="max">Upper end of range, exclusive</param>
-		float RandomFloat(float min, float max);
+		float Float(float min, float max);
 
 		/// <summary>
 		/// Return a random double in the range of [0, 1) using the internal XORshift
 		/// </summary>
-		double RandomDouble();
+		double Double();
 
 		/// <summary>
 		/// Return a random double in the range of [min, max) using the internal XORshift
 		/// </summary>
 		/// <param name="min">Lower end of range, inclusive</param>
 		/// <param name="max">Upper end of range, exclusive</param>
-		double RandomDouble(double min, double max);
+		double Double(double min, double max);
 	};
 
 	/// <summary>

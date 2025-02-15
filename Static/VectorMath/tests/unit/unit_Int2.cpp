@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <Int2.h>
+#include <VectorTypes.h>
 
 #include <array>
 

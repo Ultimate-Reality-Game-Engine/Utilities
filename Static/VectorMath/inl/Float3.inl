@@ -14,9 +14,6 @@
 #define ISINF(x)  isinf(x)
 #endif
 
-#include <SIMDVectorTemplates.h>
-#include <Quaternion.h>
-
 #if defined(_SSE2_INTRINSICS_)
 
 #define _3UNPACK3INTO4(l1, l2, l3) \
@@ -1335,7 +1332,7 @@ namespace UltReality::Math
 					VECTOR V = Vector::LoadFloat3(reinterpret_cast<const Float3*>(pInputVector));
 					pInputVector += inputStride;
 
-					VECTOR Z = PERMUTE_PS(v, _MM_SHUFFLE(2, 2, 2, 2));
+					VECTOR Z = PERMUTE_PS(V, _MM_SHUFFLE(2, 2, 2, 2));
 					VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
 					VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
 
@@ -2869,6 +2866,60 @@ namespace UltReality::Math
 #ifdef _PREFAST_
 #pragma prefast(pop)
 #endif
+
+		FORCE_INLINE VECTOR VEC_CALLCONV RandUnit() noexcept
+		{
+			VECTOR vOne = Vector::Set(1.0f, 1.0f, 1.0f, 1.0f);
+			VECTOR vZero = Vector::Zero();
+
+			RandomEngine random;
+			random.SeedWithTime();
+
+			// Keep trying until we get a point on/in the hemisphere.
+			while (true)
+			{
+				// Generate random point in the cube [-1,1]^3.
+				VECTOR v = Vector::Set(random.Float(-1.0f, 1.0f), random.Float(-1.0f, 1.0f), random.Float(-1.0f, 1.0f), 0.0f);
+
+				// Ignore points outside the unit sphere in order to get an even distribution 
+				// over the unit sphere.  Otherwise points will clump more on the sphere near 
+				// the corners of the cube.
+
+				if (Greater(LengthSq(v), vOne))
+					continue;
+
+				return Normalize(v);
+			}
+		}
+
+		FORCE_INLINE VECTOR VEC_CALLCONV RandHemisphereUnit(A_VECTOR n) noexcept
+		{
+			VECTOR vOne = Vector::Set(1.0f, 1.0f, 1.0f, 1.0f);
+			VECTOR vZero = Vector::Zero();
+
+			RandomEngine random;
+			random.SeedWithTime();
+
+			// Keep trying until we get a point on/in the hemisphere.
+			while (true)
+			{
+				// Generate random point in the cube [-1,1]^3.
+				VECTOR v = Vector::Set(random.Float(-1.0f, 1.0f), random.Float(-1.0f, 1.0f), random.Float(-1.0f, 1.0f), 0.0f);
+
+				// Ignore points outside the unit sphere in order to get an even distribution 
+				// over the unit sphere.  Otherwise points will clump more on the sphere near 
+				// the corners of the cube.
+
+				if (Greater(LengthSq(v), vOne))
+					continue;
+
+				// Ignore points in the bottom hemisphere.
+				if (Less(Dot(n, v), vZero))
+					continue;
+
+				return Normalize(v);
+			}
+		}
 	}
 }
 

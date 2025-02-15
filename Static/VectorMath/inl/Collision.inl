@@ -72,7 +72,7 @@ namespace UltReality::Math
             }
 
             //-----------------------------------------------------------------------------
-            // Return true if the quaterion is a unit quaternion.
+            // Return true if the quaternion is a unit quaternion.
             //-----------------------------------------------------------------------------
             FORCE_INLINE bool QuaternionIsUnit(_In_ A_VECTOR q) noexcept
             {
@@ -101,7 +101,7 @@ namespace UltReality::Math
             }
 
             //-----------------------------------------------------------------------------
-            // Return the point on the line segement (S1, S2) nearest the point P.
+            // Return the point on the line segment (S1, S2) nearest the point P.
             //-----------------------------------------------------------------------------
             FORCE_INLINE VECTOR PointOnLineSegmentNearestPoint(_In_ A_VECTOR S1, _In_ A_VECTOR S2, _In_ A_VECTOR p) noexcept
             {
@@ -534,7 +534,7 @@ namespace UltReality::Math
             // Store the center sphere.
             Vector::StoreFloat3(&out.center, C);
 
-            // Scale the radius of the pshere.
+            // Scale the radius of the sphere.
             float scale = sqrtf(Vector::GetX(d));
             out.radius = radius * scale;
         }
@@ -543,7 +543,7 @@ namespace UltReality::Math
         FORCE_INLINE void VEC_CALLCONV BoundingSphere::Transform(BoundingSphere& out, float scale, A_VECTOR rotation, A_VECTOR translation) const noexcept
         {
             // Load the center of the sphere.
-            VECTOR vCenter = Vector::LoadFloat3(&Ccnter);
+            VECTOR vCenter = Vector::LoadFloat3(&center);
 
             // Transform the center of the sphere.
             vCenter = Vector::Add(Vector3::Rotate(Vector::Scale(vCenter, scale), rotation), translation);
@@ -551,7 +551,7 @@ namespace UltReality::Math
             // Store the center sphere.
             Vector::StoreFloat3(&out.center, vCenter);
 
-            // Scale the radius of the pshere.
+            // Scale the radius of the sphere.
             out.radius = radius * scale;
         }
 
@@ -840,7 +840,7 @@ namespace UltReality::Math
         FORCE_INLINE bool VEC_CALLCONV BoundingSphere::Intersects(A_VECTOR origin, A_VECTOR direction, float& dist) const noexcept
         {
 #if defined(DEBUG) || defined(_DEBUG)
-            assert(Vector3::IsUnit(direction));
+            assert(Vector3IsUnit(direction));
 #endif // DEBUG
 
             VECTOR vCenter = Vector::LoadFloat3(&center);
@@ -1121,7 +1121,7 @@ namespace UltReality::Math
 
             // Compute and transform the corners and find new min/max bounds.
             VECTOR Corner = Vector::MultiplyAdd(vExtents, g_BoxOffset[0], vCenter);
-            Corner = Vector3::Transform(Corner, M);
+            Corner = Vector3::Transform(Corner, m);
 
             VECTOR Min, Max;
             Min = Max = Corner;
@@ -1129,7 +1129,7 @@ namespace UltReality::Math
             for (size_t i = 1; i < CORNER_COUNT; ++i)
             {
                 Corner = Vector::MultiplyAdd(vExtents, g_BoxOffset[i], vCenter);
-                Corner = Vector3::Transform(Corner, M);
+                Corner = Vector3::Transform(Corner, m);
 
                 Min = Vector::Min(Min, Corner);
                 Max = Vector::Max(Max, Corner);
@@ -1148,7 +1148,7 @@ namespace UltReality::Math
 #endif // DEBUG
 
             // Load center and extents.
-            VECTOR vCenter = Vector::LoadFloat3(&Ccnter);
+            VECTOR vCenter = Vector::LoadFloat3(&center);
             VECTOR vExtents = Vector::LoadFloat3(&extents);
 
             VECTOR VectorScale = Vector::Replicate(scale);
@@ -1625,15 +1625,15 @@ namespace UltReality::Math
             // Adjust ray origin to be relative to center of the box.
             VECTOR TOrigin = Vector::Subtract(vCenter, origin);
 
-            // Compute the dot product againt each axis of the box.
-            // Since the axii are (1,0,0), (0,1,0), (0,0,1) no computation is necessary.
+            // Compute the dot product against each axis of the box.
+            // Since the axis' are (1,0,0), (0,1,0), (0,0,1) no computation is necessary.
             VECTOR AxisDotOrigin = TOrigin;
             VECTOR AxisDotDirection = direction;
 
             // if (fabs(AxisDotDirection) <= Epsilon) the ray is nearly parallel to the slab.
             VECTOR IsParallel = Vector::LessOrEqual(Vector::Abs(AxisDotDirection), g_RayEpsilon);
 
-            // Test against all three axii simultaneously.
+            // Test against all three axis' simultaneously.
             VECTOR InverseAxisDotDirection = Vector::Reciprocal(AxisDotDirection);
             VECTOR t1 = Vector::Multiply(Vector::Subtract(AxisDotOrigin, vExtents), InverseAxisDotDirection);
             VECTOR t2 = Vector::Multiply(Vector::Add(AxisDotOrigin, vExtents), InverseAxisDotDirection);
@@ -2166,7 +2166,7 @@ namespace UltReality::Math
             VECTOR ARX1 = Vector::Abs(RX1);
             VECTOR ARX2 = Vector::Abs(RX2);
 
-            // Test each of the 15 possible seperating axii.
+            // Test each of the 15 possible separating axis'.
             VECTOR d, d_A, d_B;
 
             // l = a(u) = (1, 0, 0)
@@ -2306,7 +2306,7 @@ namespace UltReality::Math
             NoIntersection = Vector::OrInt(NoIntersection,
                 Vector::Greater(Vector::Abs(d), Vector::Add(d_A, d_B)));
 
-            // No seperating axis found, boxes must intersect.
+            // No separating axis found, boxes must intersect.
             return Vector4::NotEqualInt(NoIntersection, Vector::TrueInt()) ? true : false;
         }
 
@@ -2380,8 +2380,8 @@ namespace UltReality::Math
             assert(Vector3IsUnit(direction));
 #endif // DEBUG
 
-            static const VECTOR_U32 SelectY = { { { SELECT_0, SELECT_1, SELECT_0, SELECT_0 } } };
-            static const VECTOR_U32 SelectZ = { { { SELECT_0, SELECT_0, SELECT_1, SELECT_0 } } };
+            static const VECTOR_U32 SelectY = { { { SELECT_NONE, SELECT_ALL, SELECT_NONE, SELECT_NONE } } };
+            static const VECTOR_U32 SelectZ = { { { SELECT_NONE, SELECT_NONE, SELECT_ALL, SELECT_NONE } } };
 
             // Load the box.
             VECTOR vCenter = Vector::LoadFloat3(&center);
@@ -2398,12 +2398,12 @@ namespace UltReality::Math
             // Adjust ray origin to be relative to center of the box.
             VECTOR TOrigin = Vector::Subtract(vCenter, origin);
 
-            // Compute the dot product againt each axis of the box.
+            // Compute the dot product against each axis of the box.
             VECTOR AxisDotOrigin = Vector3::Dot(R.r[0], TOrigin);
             AxisDotOrigin = Vector::Select(AxisDotOrigin, Vector3::Dot(R.r[1], TOrigin), SelectY);
             AxisDotOrigin = Vector::Select(AxisDotOrigin, Vector3::Dot(R.r[2], TOrigin), SelectZ);
 
-            VECTOR AxisDotDirection = VE3::Dot(R.r[0], direction);
+            VECTOR AxisDotDirection = Vector3::Dot(R.r[0], direction);
             AxisDotDirection = Vector::Select(AxisDotDirection, Vector3::Dot(R.r[1], direction), SelectY);
             AxisDotDirection = Vector::Select(AxisDotDirection, Vector3::Dot(R.r[2], direction), SelectZ);
 
@@ -2440,7 +2440,7 @@ namespace UltReality::Math
             if (!Vector3AnyTrue(NoIntersection))
             {
                 // Store the x-component to *pDist
-                StoreFloat(&dist, t_min);
+                Vector::StoreFloat(&dist, t_min);
                 return true;
             }
 
@@ -2660,7 +2660,7 @@ namespace UltReality::Math
             VECTOR dZ = Vector3::Dot(m.r[2], m.r[2]);
 
             VECTOR d = Vector::Max(dX, Vector::Max(dY, dZ));
-            float Scale = sqrtf(Vector::GetX(d));
+            float scale = sqrtf(Vector::GetX(d));
 
             out.near = near * scale;
             out.far = far * scale;
@@ -2788,7 +2788,7 @@ namespace UltReality::Math
             for (size_t i = 0; i < 6; ++i)
             {
                 VECTOR dot = Vector4::Dot(TPoint, Planes[i]);
-                outside = Vector::OrInt(Outside, Vector::Greater(dot, zero));
+                outside = Vector::OrInt(outside, Vector::Greater(dot, zero));
             }
 
             return Vector4::NotEqualInt(outside, Vector::TrueInt()) ? CONTAINS : DISJOINT;
@@ -2804,27 +2804,27 @@ namespace UltReality::Math
             // Create 6 planes (do it inline to encourage use of registers)
             VECTOR nearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
             nearPlane = PlaneTransform(nearPlane, vOrientation, vOrigin);
-            nearPlane = PlaneNormalize(nearPlane);
+            nearPlane = Plane::Normalize(nearPlane);
 
             VECTOR farPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
             farPlane = PlaneTransform(farPlane, vOrientation, vOrigin);
-            farPlane = PlaneNormalize(farPlane);
+            farPlane = Plane::Normalize(farPlane);
 
             VECTOR rightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
             rightPlane = PlaneTransform(rightPlane, vOrientation, vOrigin);
-            rightPlane = PlaneNormalize(rightPlane);
+            rightPlane = Plane::Normalize(rightPlane);
 
             VECTOR leftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
             leftPlane = PlaneTransform(leftPlane, vOrientation, vOrigin);
-            leftPlane = PlaneNormalize(leftPlane);
+            leftPlane = Plane::Normalize(leftPlane);
 
             VECTOR topPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
             topPlane = PlaneTransform(topPlane, vOrientation, vOrigin);
-            topPlane = PlaneNormalize(topPlane);
+            topPlane = Plane::Normalize(topPlane);
 
             VECTOR bottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
             bottomPlane = PlaneTransform(bottomPlane, vOrientation, vOrigin);
-            bottomPlane = PlaneNormalize(bottomPlane);
+            bottomPlane = Plane::Normalize(bottomPlane);
 
             return TriangleTests::ContainedBy(V0, V1, V2, nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane);
         }
@@ -2839,27 +2839,27 @@ namespace UltReality::Math
             // Create 6 planes (do it inline to encourage use of registers)
             VECTOR nearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
             nearPlane = PlaneTransform(nearPlane, vOrientation, vOrigin);
-            nearPlane = PlaneNormalize(nearPlane);
+            nearPlane = Plane::Normalize(nearPlane);
 
             VECTOR farPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
             farPlane = PlaneTransform(farPlane, vOrientation, vOrigin);
-            farPlane = PlaneNormalize(farPlane);
+            farPlane = Plane::Normalize(farPlane);
 
             VECTOR rightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
             rightPlane = PlaneTransform(rightPlane, vOrientation, vOrigin);
-            rightPlane = PlaneNormalize(rightPlane);
+            rightPlane = Plane::Normalize(rightPlane);
 
             VECTOR leftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
             leftPlane = PlaneTransform(leftPlane, vOrientation, vOrigin);
-            leftPlane = PlaneNormalize(leftPlane);
+            leftPlane = Plane::Normalize(leftPlane);
 
             VECTOR topPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
             topPlane = PlaneTransform(topPlane, vOrientation, vOrigin);
-            topPlane = PlaneNormalize(topPlane);
+            topPlane = Plane::Normalize(topPlane);
 
             VECTOR bottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
             bottomPlane = PlaneTransform(bottomPlane, vOrientation, vOrigin);
-            bottomPlane = PlaneNormalize(bottomPlane);
+            bottomPlane = Plane::Normalize(bottomPlane);
 
             return sh.ContainedBy(nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane);
         }
@@ -2874,27 +2874,27 @@ namespace UltReality::Math
             // Create 6 planes (do it inline to encourage use of registers)
             VECTOR nearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
             nearPlane = PlaneTransform(nearPlane, vOrientation, vOrigin);
-            nearPlane = PlaneNormalize(nearPlane);
+            nearPlane = Plane::Normalize(nearPlane);
 
             VECTOR farPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
             farPlane = PlaneTransform(farPlane, vOrientation, vOrigin);
-            farPlane = PlaneNormalize(farPlane);
+            farPlane = Plane::Normalize(farPlane);
 
             VECTOR rightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
             rightPlane = PlaneTransform(rightPlane, vOrientation, vOrigin);
-            rightPlane = PlaneNormalize(rightPlane);
+            rightPlane = Plane::Normalize(rightPlane);
 
             VECTOR leftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
             leftPlane = PlaneTransform(leftPlane, vOrientation, vOrigin);
-            leftPlane = PlaneNormalize(leftPlane);
+            leftPlane = Plane::Normalize(leftPlane);
 
             VECTOR topPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
             topPlane = PlaneTransform(topPlane, vOrientation, vOrigin);
-            topPlane = PlaneNormalize(topPlane);
+            topPlane = Plane::Normalize(topPlane);
 
             VECTOR bottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
             bottomPlane = PlaneTransform(bottomPlane, vOrientation, vOrigin);
-            bottomPlane = PlaneNormalize(bottomPlane);
+            bottomPlane = Plane::Normalize(bottomPlane);
 
             return box.ContainedBy(nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane);
         }
@@ -2909,27 +2909,27 @@ namespace UltReality::Math
             // Create 6 planes (do it inline to encourage use of registers)
             VECTOR nearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
             nearPlane = PlaneTransform(nearPlane, vOrientation, vOrigin);
-            nearPlane = PlaneNormalize(nearPlane);
+            nearPlane = Plane::Normalize(nearPlane);
 
             VECTOR farPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
             farPlane = PlaneTransform(farPlane, vOrientation, vOrigin);
-            farPlane = PlaneNormalize(farPlane);
+            farPlane = Plane::Normalize(farPlane);
 
             VECTOR rightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
             rightPlane = PlaneTransform(rightPlane, vOrientation, vOrigin);
-            rightPlane = PlaneNormalize(rightPlane);
+            rightPlane = Plane::Normalize(rightPlane);
 
             VECTOR leftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
             leftPlane = PlaneTransform(leftPlane, vOrientation, vOrigin);
-            leftPlane = PlaneNormalize(leftPlane);
+            leftPlane = Plane::Normalize(leftPlane);
 
             VECTOR topPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
             topPlane = PlaneTransform(topPlane, vOrientation, vOrigin);
-            topPlane = PlaneNormalize(topPlane);
+            topPlane = Plane::Normalize(topPlane);
 
             VECTOR bottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
             bottomPlane = PlaneTransform(bottomPlane, vOrientation, vOrigin);
-            bottomPlane = PlaneNormalize(bottomPlane);
+            bottomPlane = Plane::Normalize(bottomPlane);
 
             return box.ContainedBy(nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane);
         }
@@ -2944,27 +2944,27 @@ namespace UltReality::Math
             // Create 6 planes (do it inline to encourage use of registers)
             VECTOR nearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
             nearPlane = PlaneTransform(nearPlane, vOrientation, vOrigin);
-            nearPlane = PlaneNormalize(nearPlane);
+            nearPlane = Plane::Normalize(nearPlane);
 
             VECTOR farPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
             farPlane = PlaneTransform(farPlane, vOrientation, vOrigin);
-            farPlane = PlaneNormalize(farPlane);
+            farPlane = Plane::Normalize(farPlane);
 
             VECTOR rightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
             rightPlane = PlaneTransform(rightPlane, vOrientation, vOrigin);
-            rightPlane = PlaneNormalize(rightPlane);
+            rightPlane = Plane::Normalize(rightPlane);
 
             VECTOR leftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
             leftPlane = PlaneTransform(leftPlane, vOrientation, vOrigin);
-            leftPlane = PlaneNormalize(leftPlane);
+            leftPlane = Plane::Normalize(leftPlane);
 
             VECTOR topPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
             topPlane = PlaneTransform(topPlane, vOrientation, vOrigin);
-            topPlane = PlaneNormalize(topPlane);
+            topPlane = Plane::Normalize(topPlane);
 
             VECTOR bottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
             bottomPlane = PlaneTransform(bottomPlane, vOrientation, vOrigin);
-            bottomPlane = PlaneNormalize(bottomPlane);
+            bottomPlane = Plane::Normalize(bottomPlane);
 
             return fr.ContainedBy(nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane);
         }
@@ -3153,8 +3153,8 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE bool BoundingFrustum::Intersects(const BoundingOrientedBox& box) const noexcept
         {
-            static const VECTOR_U32 selectY = { { { SELECT_0, SELECT_1, SELECT_0, SELECT_0 } } };
-            static const VECTOR_U32 selectZ = { { { SELECT_0, SELECT_0, SELECT_1, SELECT_0 } } };
+            static const VECTOR_U32 selectY = { { { SELECT_NONE, SELECT_ALL, SELECT_NONE, SELECT_NONE } } };
+            static const VECTOR_U32 selectZ = { { { SELECT_NONE, SELECT_NONE, SELECT_ALL, SELECT_NONE } } };
 
             VECTOR zero = Vector::Zero();
 
@@ -3481,7 +3481,7 @@ namespace UltReality::Math
             planeDistA[4] = Vector3::Dot(axisA[4], originA);
             planeDistA[5] = Vector3::Dot(axisA[5], originA);
 
-            // Check each axis of frustum A for a seperating plane (5).
+            // Check each axis of frustum A for a separating plane (5).
             for (size_t i = 0; i < 6; ++i)
             {
                 // Find the minimum projection of the frustum onto the plane normal.
@@ -3542,7 +3542,7 @@ namespace UltReality::Math
 
                         VECTOR tempB = Vector3::Dot(axis, cornersB[k]);
                         minB = Vector::Min(minB, tempB);
-                        maxB = VE::Max(maxB, tempB);
+                        maxB = Vector::Max(maxB, tempB);
                     }
 
                     // if (MinA > MaxB || MinB > MaxA) reject
@@ -3551,7 +3551,7 @@ namespace UltReality::Math
                 }
             }
 
-            // If there is a seperating plane, then the frustums do not intersect.
+            // If there is a separating plane, then the frustums do not intersect.
             if (Vector4::EqualInt(outside, Vector::TrueInt()))
                 return false;
 
@@ -3789,16 +3789,16 @@ namespace UltReality::Math
             VECTOR frOrigin = Vector::LoadFloat3(&origin);
             VECTOR frOrientation = Vector::LoadFloat4(&orientation);
 
-            // This algorithm based on "Fast Ray-Convex Polyhedron Intersectin," in James Arvo, ed., Graphics Gems II pp. 247-250
+            // This algorithm based on "Fast Ray-Convex Polyhedron Intersecting," in James Arvo, ed., Graphics Gems II pp. 247-250
             float tnear = -FLT_MAX;
             float tfar = FLT_MAX;
 
             for (size_t i = 0; i < 6; ++i)
             {
                 VECTOR plane = PlaneTransform(planes[i], frOrientation, frOrigin);
-                plane = PlaneNormalize(plane);
+                plane = Plane::Normalize(plane);
 
-                VECTOR axisDotOrigin = PlaneDotCoord(plane, rayOrigin);
+                VECTOR axisDotOrigin = Plane::DotCoord(plane, rayOrigin);
                 VECTOR axisDotDirection = Vector3::Dot(plane, direction);
 
                 if (Vector3::LessOrEqual(Vector::Abs(axisDotDirection), g_RayEpsilon))
@@ -3970,42 +3970,42 @@ namespace UltReality::Math
             {
                 VECTOR vNearPlane = Vector::Set(0.0f, 0.0f, -1.0f, near);
                 vNearPlane = PlaneTransform(vNearPlane, vOrientation, vOrigin);
-                *nearPlane = PlaneNormalize(vNearPlane);
+                *nearPlane = Plane::Normalize(vNearPlane);
             }
 
             if (farPlane)
             {
                 VECTOR vFarPlane = Vector::Set(0.0f, 0.0f, 1.0f, -far);
                 vFarPlane = PlaneTransform(vFarPlane, vOrientation, vOrigin);
-                *farPlane = PlaneNormalize(vFarPlane);
+                *farPlane = Plane::Normalize(vFarPlane);
             }
 
             if (rightPlane)
             {
                 VECTOR vRightPlane = Vector::Set(1.0f, 0.0f, -rightSlope, 0.0f);
                 vRightPlane = PlaneTransform(vRightPlane, vOrientation, vOrigin);
-                *rightPlane = PlaneNormalize(vRightPlane);
+                *rightPlane = Plane::Normalize(vRightPlane);
             }
 
             if (leftPlane)
             {
                 VECTOR vLeftPlane = Vector::Set(-1.0f, 0.0f, leftSlope, 0.0f);
                 vLeftPlane = PlaneTransform(vLeftPlane, vOrientation, vOrigin);
-                *leftPlane = PlaneNormalize(vLeftPlane);
+                *leftPlane = Plane::Normalize(vLeftPlane);
             }
 
             if (topPlane)
             {
                 VECTOR vTopPlane = Vector::Set(0.0f, 1.0f, -topSlope, 0.0f);
                 vTopPlane = PlaneTransform(vTopPlane, vOrientation, vOrigin);
-                *topPlane = PlaneNormalize(vTopPlane);
+                *topPlane = Plane::Normalize(vTopPlane);
             }
 
             if (bottomPlane)
             {
                 VECTOR vBottomPlane = Vector::Set(0.0f, -1.0f, bottomSlope, 0.0f);
                 vBottomPlane = PlaneTransform(vBottomPlane, vOrientation, vOrigin);
-                *bottomPlane = PlaneNormalize(vBottomPlane);
+                *bottomPlane = Plane::Normalize(vBottomPlane);
             }
         }
 
@@ -4172,10 +4172,10 @@ namespace UltReality::Math
 
                 t = Vector::Divide(t, det);
 
-                // (u / det) and (v / dev) are the barycentric cooridinates of the intersection.
+                // (u / det) and (v / dev) are the barycentric coordinates of the intersection.
 
                 // Store the x-component to *pDist
-                StoreFloat(&dist, t);
+                Vector::StoreFloat(&dist, t);
 
                 return true;
             }
@@ -4192,16 +4192,16 @@ namespace UltReality::Math
             //
             // The final test could be considered an edge-edge separating plane test with
             // the 9 possible cases narrowed down to the only two pairs of edges that can
-            // actaully result in a seperation.
+            // actually result in a separation.
             //-----------------------------------------------------------------------------
             _Use_decl_annotations_
             FORCE_INLINE bool VEC_CALLCONV Intersects(A_VECTOR A0, A_VECTOR A1, A_VECTOR A2, B_VECTOR B0, C_VECTOR B1, C_VECTOR B2) noexcept
             {
-                static const VECTOR_U32 selectY = { { { SELECT_0, SELECT_1, SELECT_0, SELECT_0 } } };
-                static const VECTOR_U32 selectZ = { { { SELECT_0, SELECT_0, SELECT_1, SELECT_0 } } };
-                static const VECTOR_U32 select0111 = { { { SELECT_0, SELECT_1, SELECT_1, SELECT_1 } } };
-                static const VECTOR_U32 select1011 = { { { SELECT_1, SELECT_0, SELECT_1, SELECT_1 } } };
-                static const VECTOR_U32 select1101 = { { { SELECT_1, SELECT_1, SELECT_0, SELECT_1 } } };
+                static const VECTOR_U32 selectY = { { { SELECT_NONE, SELECT_ALL, SELECT_NONE, SELECT_NONE } } };
+                static const VECTOR_U32 selectZ = { { { SELECT_NONE, SELECT_NONE, SELECT_ALL, SELECT_NONE } } };
+                static const VECTOR_U32 select0111 = { { { SELECT_NONE, SELECT_ALL, SELECT_ALL, SELECT_ALL } } };
+                static const VECTOR_U32 select1011 = { { { SELECT_ALL, SELECT_NONE, SELECT_ALL, SELECT_ALL } } };
+                static const VECTOR_U32 select1101 = { { { SELECT_ALL, SELECT_ALL, SELECT_NONE, SELECT_ALL } } };
 
                 VECTOR zero = Vector::Zero();
 
@@ -4220,7 +4220,7 @@ namespace UltReality::Math
 
                 // Ensure robustness with co-planar triangles by zeroing small distances.
                 uint32_t BDistIsZeroCR;
-                VECTOR BDistIsZero = GreaterR(&BDistIsZeroCR, g_RayEpsilon, Vector::Abs(BDist));
+                VECTOR BDistIsZero = Vector::GreaterR(&BDistIsZeroCR, g_RayEpsilon, Vector::Abs(BDist));
                 BDist = Vector::Select(BDist, zero, BDistIsZero);
 
                 uint32_t BDistIsLessCR;
@@ -4230,7 +4230,7 @@ namespace UltReality::Math
                 VECTOR BDistIsGreater = Vector::GreaterR(&BDistIsGreaterCR, BDist, zero);
 
                 // If all the points are on the same side we don't intersect.
-                if (ComparisonAllTrue(BDistIsLessCR) || ComparisonAllTrue(BDistIsGreaterCR))
+                if (CompareAllTrue(BDistIsLessCR) || CompareAllTrue(BDistIsGreaterCR))
                     return false;
 
                 // Compute the normal of triangle B.
@@ -4258,15 +4258,15 @@ namespace UltReality::Math
                 VECTOR ADistIsGreater = Vector::GreaterR(&ADistIsGreaterCR, ADist, zero);
 
                 // If all the points are on the same side we don't intersect.
-                if (ComparisonAllTrue(ADistIsLessCR) || ComparisonAllTrue(ADistIsGreaterCR))
+                if (CompareAllTrue(ADistIsLessCR) || CompareAllTrue(ADistIsGreaterCR))
                     return false;
 
                 // Special case for co-planar triangles.
-                if (ComparisonAllTrue(ADistIsZeroCR) || ComparisonAllTrue(BDistIsZeroCR))
+                if (CompareAllTrue(ADistIsZeroCR) || CompareAllTrue(BDistIsZeroCR))
                 {
                     VECTOR axis, dist, minDist;
 
-                    // Compute an axis perpindicular to the edge (points out).
+                    // Compute an axis perpendicular to the edge (points out).
                     axis = Vector3::Cross(N1, Vector::Subtract(A1, A0));
                     dist = Vector3::Dot(axis, A0);
 
@@ -4408,7 +4408,7 @@ namespace UltReality::Math
                 bool bPositiveB;
 
                 if (Vector3AllTrue(Vector::Select(BDistIsGreaterEqual, BDistIsLess, select0111)) ||
-                    Vector3AllTrue(Select(BDistIsGreater, BDistIsLessEqual, select0111)))
+                    Vector3AllTrue(Vector::Select(BDistIsGreater, BDistIsLessEqual, select0111)))
                 {
                     // B0 is singular, crossing from positive to negative.
                     BB0 = B0; BB1 = B1; BB2 = B2;

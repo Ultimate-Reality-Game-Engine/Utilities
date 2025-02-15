@@ -216,7 +216,7 @@ namespace UltReality::Math
 			return (((V1.vector4_f32[0] != V2.vector4_f32[0]) || (V1.vector4_f32[1] != V2.vector4_f32[1])) != 0);
 
 #elif defined(_SSE2_INTRINSICS_)
-			VECTOR vTemp = _mm_cmpeq_ps(V!, V2);
+			VECTOR vTemp = _mm_cmpeq_ps(V1, V2);
 
 			// Ignore z and w
 			return (((_mm_movemask_ps(vTemp) & 3) != 3) != 0);
@@ -256,6 +256,7 @@ namespace UltReality::Math
 #elif defined(_SSE2_INTRINSICS_)
 			VECTOR vTemp = _mm_cmpgt_ps(V1, V2);
 			int iTest = _mm_movemask_ps(vTemp) & 3;
+			uint32_t CR = 0;
 			if (iTest == 3)
 			{
 				CR = CRMASK_CR6TRUE;
@@ -519,7 +520,7 @@ namespace UltReality::Math
 			return Result;
 
 #elif defined(_SSE4_INTRINSICS_)
-			VECTOR vTemp = _mm_dp_ds(v, v, 0x3f);
+			VECTOR vTemp = _mm_dp_ps(v, v, 0x3f);
 			VECTOR vLengthSq = _mm_sqrt_ps(vTemp);
 
 			return _mm_div_ps(g_One, vLengthSq);
@@ -698,7 +699,7 @@ namespace UltReality::Math
 			// If the length is infinity, set the elements to zero
 			vLengthSq = _mm_cmpneq_ps(vLengthSq, g_Infinity);
 			// Reciprocal mul to perform the normalization
-			vResult = _mm_div_ps(V, vResult);
+			vResult = _mm_div_ps(v, vResult);
 			// Any that are infinity, set to zero
 			vResult = _mm_and_ps(vResult, vZeroMask);
 			// Select qnan or result based on infinite length
@@ -773,7 +774,7 @@ namespace UltReality::Math
 		{
 #if defined(DEBUG) || defined(_DEBUG)
 			assert((Vector::GetY(lengthMin) == Vector::GetX(lengthMin)));
-			assert((Vector::GETY(lengthMax) == Vector::GetX(lengthMax)));
+			assert((Vector::GetY(lengthMax) == Vector::GetX(lengthMax)));
 			assert(GreaterOrEqual(lengthMin, g_Zero));
 			assert(GreaterOrEqual(lengthMax, g_Zero));
 			assert(GreaterOrEqual(lengthMax, lengthMin));
@@ -930,14 +931,14 @@ namespace UltReality::Math
 			VECTOR L1 = ReciprocalLength(V1);
 			VECTOR L2 = ReciprocalLength(V2);
 
-			VECTOR Dot = Dot(V1, V2);
+			VECTOR dot = Dot(V1, V2);
 
 			L1 = Vector::Multiply(L1, L2);
 
-			VECTOR CosAngle = Vector::Multiply(Dot, L1);
-			CosAngle = Vector::Clamp(CosAngle, g_NegativeOne.v, g_One.v);
+			VECTOR cosAngle = Vector::Multiply(dot, L1);
+			cosAngle = Vector::Clamp(cosAngle, g_NegativeOne.v, g_One.v);
 
-			return Vector::ACos(CosAngle);
+			return Vector::ACos(cosAngle);
 		}
 
 		FORCE_INLINE VECTOR VEC_CALLCONV LinePointDistance(A_VECTOR linePoint1, A_VECTOR linePoint2, A_VECTOR point) noexcept
@@ -1039,7 +1040,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV Transform(A_VECTOR v, A_VECTOR m) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV Transform(A_VECTOR v, A_MATRIX m) noexcept
 		{
 #if defined(_NO_INTRINSICS_)
 			VECTOR y = Vector::SplatY(v);
@@ -1074,7 +1075,7 @@ namespace UltReality::Math
 			_Analysis_assume_(outputStride >= sizeof(Float4));
 #endif
 
-//#if defined(_NO_INTRINSICS_)
+#if defined(_NO_INTRINSICS_)
 			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
 			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
 
@@ -1082,7 +1083,7 @@ namespace UltReality::Math
 			const VECTOR row1 = m.r[1];
 			const VECTOR row3 = m.r[3];
 
-			for (size_t i = 0; i < vectorCountl i++)
+			for (size_t i = 0; i < vectorCount; i++)
 			{
 				VECTOR v = Vector::LoadFloat2(reinterpret_cast<const Float2*>(pInputVector));
 				VECTOR y = Vector::SplatY(v);
@@ -1096,7 +1097,7 @@ namespace UltReality::Math
 #pragma prefast(disable : 26015, "PREfast noise: Esp:1307" )
 #endif
 
-				Vector::StoreFloat4(reinterpret_cast<XMFLOAT4*>(pOutputVector), Result);
+				Vector::StoreFloat4(reinterpret_cast<Float4*>(pOutputVector), Result);
 
 #ifdef _PREFAST_
 #pragma prefast(pop)
@@ -1108,7 +1109,7 @@ namespace UltReality::Math
 
 			return pOutputStream;
 
-//#elif defined(_AVX2_INTRINSICS_)
+#elif defined(_AVX2_INTRINSICS_)
 			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
 			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
 
@@ -1239,7 +1240,7 @@ namespace UltReality::Math
 					VECTOR Y = PERMUTE_PS(xy, _MM_SHUFFLE(1, 1, 1, 1));
 					VECTOR X = PERMUTE_PS(xy, _MM_SHUFFLE(0, 0, 0, 0));
 
-					VECTOR vTemp = XM_FMADD_PS(Y, row1, row3);
+					VECTOR vTemp = FMADD_PS(Y, row1, row3);
 					VECTOR vTemp2 = _mm_mul_ps(X, row0);
 					vTemp = _mm_add_ps(vTemp, vTemp2);
 
@@ -1331,12 +1332,12 @@ namespace UltReality::Math
 				}
 			}
 
-			if (!(reinterpret_cast<uintptr_t>(pInputVector) & 0xF) && !(InputStride & 0xF))
+			if (!(reinterpret_cast<uintptr_t>(pInputVector) & 0xF) && !(inputStride & 0xF))
 			{
 				if (!(reinterpret_cast<uintptr_t>(pOutputStream) & 0xF) && !(outputStride & 0xF))
 				{
 					// Aligned input, aligned output
-					for (; i < VectorCount; i++)
+					for (; i < vectorCount; i++)
 					{
 						VECTOR V = _mm_castsi128_ps(_mm_loadl_epi64(reinterpret_cast<const __m128i*>(pInputVector)));
 						pInputVector += inputStride;
@@ -1398,7 +1399,7 @@ namespace UltReality::Math
 #endif
 		}
 
-		FORCE_INLINE VECTOR VEC_CALLCONV TransformCoord(A_VECTOR v, A_VECTOR m) noexcept
+		FORCE_INLINE VECTOR VEC_CALLCONV TransformCoord(A_VECTOR v, A_MATRIX m) noexcept
 		{
 			VECTOR y = Vector::SplatY(v);
 			VECTOR x = Vector::SplatX(v);
@@ -1425,7 +1426,7 @@ namespace UltReality::Math
 			_Analysis_assume_(outputStride >= sizeof(Float2));
 #endif
 
-//#if defined(_NO_INTRINSICS_)
+#if defined(_NO_INTRINSICS_)
 			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
 			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
 
@@ -1463,7 +1464,7 @@ namespace UltReality::Math
 
 			return pOutputStream;
 
-//#elif defined(_AVX2_INTRINSICS_)
+#elif defined(_AVX2_INTRINSICS_)
 			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
 			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
 
@@ -1652,7 +1653,7 @@ namespace UltReality::Math
 								VECTOR Y = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
 								VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
 
-								VECTOR vTemp = XM_FMADD_PS(Y, row1, row3);
+								VECTOR vTemp = FMADD_PS(Y, row1, row3);
 								VECTOR vTemp2 = _mm_mul_ps(X, row0);
 								vTemp = _mm_add_ps(vTemp, vTemp2);
 
@@ -1834,7 +1835,7 @@ namespace UltReality::Math
 			vResult = _mm_mul_ps(vResult, m.r[1]);
 			
 			VECTOR vTemp = PERMUTE_PS(v, _MM_SHUFFLE(0, 0, 0, 0)); // x
-			vResult = FMADD_PS(vTemp. m.r[0], vResult);
+			vResult = FMADD_PS(vTemp, m.r[0], vResult);
 			
 			return vResult;
 #endif
@@ -1854,7 +1855,7 @@ namespace UltReality::Math
 			_Analysis_assume_(outputStride >= sizeof(Float2));
 #endif
 
-//#if defined(_NO_INTRINSICS_)
+#if defined(_NO_INTRINSICS_)
 			const uint8_t* pInputVector = reinterpret_cast<const uint8_t*>(pInputStream);
 			uint8_t* pOutputVector = reinterpret_cast<uint8_t*>(pOutputStream);
 
@@ -1863,9 +1864,9 @@ namespace UltReality::Math
 
 			for (size_t i = 0; i < vectorCount; i++)
 			{
-				VECTOR V = Vector::Float2(reinterpret_cast<const Float2*>(pInputVector));
-				VECTOR Y = Vector::SplatY(v);
-				VECTOR X = Vector::SplatX(v);
+				VECTOR V = Vector::LoadFloat2(reinterpret_cast<const Float2*>(pInputVector));
+				VECTOR Y = Vector::SplatY(V);
+				VECTOR X = Vector::SplatX(V);
 
 				VECTOR Result = Vector::Multiply(Y, row1);
 				Result = Vector::MultiplyAdd(X, row0, Result);
@@ -1881,8 +1882,8 @@ namespace UltReality::Math
 #pragma prefast(pop)
 #endif
 
-				pInputVector += InputStride;
-				pOutputVector += OutputStride;
+				pInputVector += inputStride;
+				pOutputVector += outputStride;
 			}
 
 			return pOutputStream;
@@ -2045,7 +2046,7 @@ namespace UltReality::Math
 								VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
 
 								VECTOR vTemp = _mm_mul_ps(Y, row1);
-								VECTOR V1 = XM_FMADD_PS(X, row0, vTemp);
+								VECTOR V1 = FMADD_PS(X, row0, vTemp);
 
 								// Result 2
 								Y = PERMUTE_PS(V, _MM_SHUFFLE(3, 3, 3, 3));
@@ -2106,7 +2107,7 @@ namespace UltReality::Math
 							VECTOR X = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
 
 							VECTOR vTemp = _mm_mul_ps(Y, row1);
-							vTemp = XM_FMADD_PS(X, row0, vTemp);
+							vTemp = FMADD_PS(X, row0, vTemp);
 
 							_mm_store_sd(reinterpret_cast<double*>(pOutputVector), _mm_castps_pd(vTemp));
 							pOutputVector += outputStride;

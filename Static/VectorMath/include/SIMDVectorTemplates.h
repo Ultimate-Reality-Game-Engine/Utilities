@@ -1,7 +1,7 @@
 #ifndef ULTREALITY_MATH_SIMD_TEMPLATES_H
 #define ULTREALITY_MATH_SIMD_TEMPLATES_H
 
-#include <SIMDVectorConfig.h>
+#include <SIMDVector.h>
 
 #if defined(__GNUC__) or defined(__clang__)
 #define FORCE_INLINE inline __attribute__((always_inline))

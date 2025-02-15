@@ -14,11 +14,17 @@ namespace UltReality::Math
 		{
 			// If x == 0, then atanf(y / x) = +pi/2 if y > 0
 			//				   atanf(y / x) = -pi/2 if y < 0
-			theta = atanf(y / x); // in [-pi/2, +pi/2]
+			theta = ScalarATan(y / x); // in [-pi/2, +pi/2]
 
 			if (theta < 0.0f)
 				theta += 2.0f * _PI;
 		}
+
+		// Quadrant II or III
+		else
+			theta = ScalarATan(y / x); // in [0, 2PI)
+
+		return theta;
 	}
 
 	constexpr float ConvertToRadians(float degrees) noexcept

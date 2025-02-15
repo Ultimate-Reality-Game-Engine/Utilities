@@ -13,7 +13,7 @@ namespace UltReality::Math
 {
 	FORCE_INLINE VECTOR SphericalToCartesian(float radius, float theta, float phi)
 	{
-		return VEC::Set(
+		return Vector::Set(
 			radius * ScalarSine(phi) * ScalarCos(theta),	// x
 			radius * ScalarCos(phi),						// y
 			radius * ScalarSine(phi) * ScalarSine(theta),	// z

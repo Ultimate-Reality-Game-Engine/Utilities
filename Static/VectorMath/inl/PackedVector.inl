@@ -11,6 +11,27 @@
 
 namespace UltReality::Math
 {
+    namespace
+    {
+        // Round to nearest (even) a.k.a. banker's rounding
+        FORCE_INLINE float round_to_nearest(float x) noexcept
+        {
+            float i = floorf(x);
+            x -= i;
+            if (x < 0.5f)
+                return i;
+            if (x > 0.5f)
+                return i + 1.0f;
+
+            float int_part;
+            (void)modff(i / 2.0f, &int_part);
+            if ((2.0f * int_part) == i)
+                return i;
+
+            return i + 1.0f;
+        }
+    }
+
     namespace PackedVector
     {
         FORCE_INLINE float ConvertHalfToFloat(HALF value) noexcept
@@ -32,7 +53,7 @@ namespace UltReality::Math
             {
                 Exponent = static_cast<uint32_t>((static_cast<int>(value) >> 10) & 0x1F);
             }
-            else if (Mantissa != 0) // The value is denormalized
+            else if (Mantissa != 0) // The value is de-normalized
             {
                 // Normalize the value in the resulting float
                 Exponent = 1;
@@ -274,7 +295,7 @@ namespace UltReality::Math
 #else
             uint32_t Result;
 
-            uint32_t* IValue = reinterpret_cast<uint32_t*>(&value)[0];
+            uint32_t IValue = reinterpret_cast<uint32_t*>(&value)[0];
             uint32_t sign = (IValue & 0x80000000U) >> 16U;
             IValue = IValue & 0x7FFFFFFFU;      // Hack off the sign
             if (IValue >= 0x47800000 /*e+16*/)
@@ -289,16 +310,16 @@ namespace UltReality::Math
             else if (IValue < 0x38800000U /*e-14*/)
             {
                 // The number is too small to be represented as a normalized half.
-                // Convert it to a denormalized value.
+                // Convert it to a de-normalized value.
                 uint32_t shift = 125U - (IValue >> 23U);
                 IValue = 0x800000U | (IValue & 0x7FFFFFU);
                 Result = IValue >> (shift + 1);
-                uint32_t s = (IValue & ((1U << Shift) - 1)) != 0;
+                uint32_t s = (IValue & ((1U << shift) - 1)) != 0;
                 Result += (Result | s) & ((IValue >> shift) & 1U);
             }
             else
             {
-                // Rebias the exponent to represent the value as a normalized half.
+                // Re-bias the exponent to represent the value as a normalized half.
                 IValue += 0xC8000000U;
                 Result = ((IValue + 0x0FFFU + ((IValue >> 13U) & 1U)) >> 13U) & 0x7FFFU;
             }
@@ -688,7 +709,7 @@ namespace UltReality::Math
             return vResult.v;
 
 #elif defined(_SSE2_INTRINSICS_)
-            static const VECTOR_F32 FixaddY16 = { { { 0, 32768.0f, 0, 0 } } };
+            static const VECTOR_F32 FixAddY16 = { { { 0, 32768.0f, 0, 0 } } };
             // Splat the two shorts in all four entries (WORD alignment okay,
             // DWORD alignment preferred)
             __m128 vTemp = _mm_load_ps1(reinterpret_cast<const float*>(&pSource->x));
@@ -701,7 +722,7 @@ namespace UltReality::Math
             // Y is 65536 times too large
             vTemp = _mm_mul_ps(vTemp, g_FixupY16);
             // y + 0x8000 to undo the signed order.
-            vTemp = _mm_add_ps(vTemp, FixaddY16);
+            vTemp = _mm_add_ps(vTemp, FixAddY16);
             return vTemp;
 #endif
         }
@@ -727,7 +748,7 @@ namespace UltReality::Math
             static const VECTOR_U32 Mask = { { { 0xFF, 0xFF00, 0, 0 } } };
             // Splat the color in all four entries (x,z,y,w)
             __m128i vInt = LOADU_SI16(&pSource->v);
-            XMVECTOR vTemp = PERMUTE_PS(_mm_castsi128_ps(vInt), _MM_SHUFFLE(0, 0, 0, 0));
+            VECTOR vTemp = PERMUTE_PS(_mm_castsi128_ps(vInt), _MM_SHUFFLE(0, 0, 0, 0));
             // Mask
             vTemp = _mm_and_ps(vTemp, Mask);
             // x,y and z are unsigned! Flip the bits to convert the order to signed
@@ -904,7 +925,7 @@ namespace UltReality::Math
                 {
                     Exponent = pSource->xe;
                 }
-                else if (Mantissa != 0) // The value is denormalized
+                else if (Mantissa != 0) // The value is de-normalized
                 {
                     // Normalize the value in the resulting float
                     Exponent = 1;
@@ -938,7 +959,7 @@ namespace UltReality::Math
                 {
                     Exponent = pSource->ye;
                 }
-                else if (Mantissa != 0) // The value is denormalized
+                else if (Mantissa != 0) // The value is de-normalized
                 {
                     // Normalize the value in the resulting float
                     Exponent = 1;
@@ -972,7 +993,7 @@ namespace UltReality::Math
                 {
                     Exponent = pSource->ze;
                 }
-                else if (Mantissa != 0) // The value is denormalized
+                else if (Mantissa != 0) // The value is de-normalized
                 {
                     // Normalize the value in the resulting float
                     Exponent = 1;
@@ -993,7 +1014,7 @@ namespace UltReality::Math
                 Result[2] = ((Exponent + 112) << 23) | (Mantissa << 18);
             }
 
-            return LoadFloat3A(reinterpret_cast<const FLOAT3A*>(&Result));
+            return Vector::LoadAFloat3(reinterpret_cast<const AFloat3*>(&Result));
         }
 
         _Use_decl_annotations_
@@ -2066,7 +2087,7 @@ namespace UltReality::Math
 #endif // DEDUG
 
             ALIGNED(16) uint32_t IValue[4];
-            StoreFloat3A(reinterpret_cast<FLOAT3A*>(&IValue), v);
+            Vector::StoreAFloat3(reinterpret_cast<AFloat3*>(&IValue), v);
 
             uint32_t Result[3];
 
@@ -2105,13 +2126,13 @@ namespace UltReality::Math
                     if (I < 0x38800000U)
                     {
                         // The number is too small to be represented as a normalized float11
-                        // Convert it to a denormalized value.
+                        // Convert it to a de-normalized value.
                         uint32_t Shift = 113U - (I >> 23U);
                         I = (0x800000U | (I & 0x7FFFFFU)) >> Shift;
                     }
                     else
                     {
-                        // Rebias the exponent to represent the value as a normalized float11
+                        // Re-bias the exponent to represent the value as a normalized float11
                         I += 0xC8000000U;
                     }
 
@@ -2152,13 +2173,13 @@ namespace UltReality::Math
                 if (I < 0x38800000U)
                 {
                     // The number is too small to be represented as a normalized float10
-                    // Convert it to a denormalized value.
+                    // Convert it to a de-normalized value.
                     uint32_t Shift = 113U - (I >> 23U);
                     I = (0x800000U | (I & 0x7FFFFFU)) >> Shift;
                 }
                 else
                 {
-                    // Rebias the exponent to represent the value as a normalized float10
+                    // Re-bias the exponent to represent the value as a normalized float10
                     I += 0xC8000000U;
                 }
 
@@ -2178,8 +2199,8 @@ namespace UltReality::Math
             assert(pDestination != nullptr);
 #endif // DEBUG
 
-            FLOAT3A tmp;
-            StoreFloat3A(&tmp, v);
+            AFloat3 tmp;
+            Vector::StoreAFloat3(&tmp, v);
 
             static constexpr float maxf9 = float(0x1FF << 7);
             static constexpr float minf9 = float(1.f / (1 << 16));
@@ -2219,8 +2240,8 @@ namespace UltReality::Math
             __m128i V1 = _mm_cvtps_ph(v, _MM_FROUND_TO_NEAREST_INT);
             _mm_storel_epi64(reinterpret_cast<__m128i*>(pDestination), V1);
 #else
-            FLOAT4A t;
-            StoreFloat4A(&t, v);
+            AFloat4 t;
+            Vector::StoreAFloat4(&t, v);
 
             pDestination->x = ConvertFloatToHalf(t.x);
             pDestination->y = ConvertFloatToHalf(t.y);
@@ -2975,7 +2996,7 @@ namespace UltReality::Math
             assert(pDestination);
 #endif // DEBUG
 
-            static const XMVECTORF32 Max = { { { 31.0f, 31.0f, 31.0f, 1.0f } } };
+            static const VECTOR_F32 Max = { { { 31.0f, 31.0f, 31.0f, 1.0f } } };
 
 #if defined(_NO_INTRINSICS_)
             VECTOR N = Vector::Clamp(v, Vector::Zero(), Max.v);
@@ -3009,7 +3030,7 @@ namespace UltReality::Math
 #endif
         }
 
-        FORCE_INLINE COLOR::COLOR(float _r, float _g, float _b. float _a) noexcept
+        FORCE_INLINE COLOR::COLOR(float _r, float _g, float _b, float _a) noexcept
         {
             StoreColor(this, Vector::Set(_r, _g, _b, _a));
         }
@@ -3017,7 +3038,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE COLOR::COLOR(const float* pArray) noexcept
         {
-            StoreColor(this, Vector::LoadFLoat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreColor(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE HALF2::HALF2(float _x, float _y) noexcept
@@ -3027,7 +3048,7 @@ namespace UltReality::Math
         }
 
         _Use_decl_annotations_
-        FORCE_INLINE HALF2::HALF2(cosnt float* pArray) noexcept
+        FORCE_INLINE HALF2::HALF2(const float* pArray) noexcept
         {
 #if defined(DEBUG) || defined(_DEBUG)
             assert(pArray != nullptr);
@@ -3045,7 +3066,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE SHORTN2::SHORTN2(const float* pArray) noexcept
         {
-            StoreShortN2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreShortN2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE SHORT2::SHORT2(float _x, float _y) noexcept
@@ -3056,7 +3077,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE SHORT2::SHORT2(const float* pArray) noexcept
         {
-            StoreShort2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreShort2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE USHORTN2::USHORTN2(float _x, float _y) noexcept
@@ -3067,7 +3088,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE USHORTN2::USHORTN2(const float* pArray) noexcept
         {
-            StoreUShortN2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreUShortN2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE USHORT2::USHORT2(float _x, float _y) noexcept
@@ -3078,7 +3099,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE USHORT2::USHORT2(const float* pArray) noexcept
         {
-            StoreUShort2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreUShort2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE BYTEN2::BYTEN2(float _x, float _y) noexcept
@@ -3089,7 +3110,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE BYTEN2::BYTEN2(const float* pArray) noexcept
         {
-            StoreByteN2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreByteN2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE BYTE2::BYTE2(float _x, float _y) noexcept
@@ -3100,7 +3121,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE BYTE2::BYTE2(const float* pArray) noexcept
         {
-            StoreByte2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreByte2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE UBYTEN2::UBYTEN2(float _x, float _y) noexcept
@@ -3111,7 +3132,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UBYTEN2::UBYTEN2(const float* pArray) noexcept
         {
-            StoreUByteN2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreUByteN2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE UBYTE2::UBYTE2(float _x, float _y) noexcept
@@ -3122,7 +3143,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UBYTE2::UBYTE2(const float* pArray) noexcept
         {
-            StoreUByte2(this, Vector::LoadFloat2(reinterpret_cast<const FLOAT2*>(pArray)));
+            StoreUByte2(this, Vector::LoadFloat2(reinterpret_cast<const Float2*>(pArray)));
         }
 
         FORCE_INLINE U565::U565(float _x, float _y, float _z) noexcept
@@ -3133,7 +3154,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE U565::U565(const float* pArray) noexcept
         {
-            StoreU565(this, Vector::LoadFloat3(reinterpret_cast<const FLOAT3*>(pArray)));
+            StoreU565(this, Vector::LoadFloat3(reinterpret_cast<const Float3*>(pArray)));
         }
 
         FORCE_INLINE FLOAT3PK::FLOAT3PK(float _x, float _y, float _z) noexcept
@@ -3144,7 +3165,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE FLOAT3PK::FLOAT3PK(const float* pArray) noexcept
         {
-            StoreFloat3PK(this, Vector::LoadFloat3(reinterpret_cast<const FLOAT3*>(pArray)));
+            StoreFloat3PK(this, Vector::LoadFloat3(reinterpret_cast<const Float3*>(pArray)));
         }
 
         FORCE_INLINE FLOAT3SE::FLOAT3SE(float _x, float _y, float _z) noexcept
@@ -3155,10 +3176,10 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE FLOAT3SE::FLOAT3SE(const float* pArray) noexcept
         {
-            StoreFloat3SE(this, Vector::LoadFloat3(reinterpret_cast<const FLOAT3*>(pArray)));
+            StoreFloat3SE(this, Vector::LoadFloat3(reinterpret_cast<const Float3*>(pArray)));
         }
 
-        FORCE_INLINE HALF4::HALF4(float _X, float _y, float _z, float _w) noexcept
+        FORCE_INLINE HALF4::HALF4(float _x, float _y, float _z, float _w) noexcept
         {
             x = ConvertFloatToHalf(_x);
             y = ConvertFloatToHalf(_y);
@@ -3180,7 +3201,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE SHORTN4::SHORTN4(const float* pArray) noexcept
         {
-            StoreShortN4(this, Vector::LoadFloat4(reinterpret_cast<const FLAOT4*>(pArray)));
+            StoreShortN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE SHORT4::SHORT4(float _x, float _y, float _z, float _w) noexcept
@@ -3191,7 +3212,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE SHORT4::SHORT4(const float* pArray) noexcept
         {
-            StoreShort4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreShort4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE USHORTN4::USHORTN4(float _x, float _y, float _z, float _w) noexcept
@@ -3202,7 +3223,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE USHORTN4::USHORTN4(const float* pArray) noexcept
         {
-            StoreUShortN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUShortN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE USHORT4::USHORT4(float _x, float _y, float _z, float _w) noexcept
@@ -3213,7 +3234,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE USHORT4::USHORT4(const float* pArray) noexcept
         {
-            StoreUShort4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUShort4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE XDECN4::XDECN4(float _x, float _y, float _z, float _w) noexcept
@@ -3224,7 +3245,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE XDECN4::XDECN4(const float* pArray) noexcept
         {
-            StoreXDecN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreXDecN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
 #ifdef _MSC_VER
@@ -3251,7 +3272,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE XDEC4::XDEC4(const float* pArray) noexcept
         {
-            StoreXDec4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreXDec4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE DECN4::DECN4(float _x, float _y, float _z, float _w) noexcept
@@ -3262,7 +3283,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE DECN4::DECN4(const float* pArray) noexcept
         {
-            StoreDecN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreDecN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE DEC4::DEC4(float _x, float _y, float _z, float _w) noexcept
@@ -3273,7 +3294,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE DEC4::DEC4(const float* pArray) noexcept
         {
-            StoreDec4(this, Vector:LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreDec4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
 #ifdef __GNUC__
@@ -3294,7 +3315,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UDECN4::UDECN4(const float* pArray) noexcept
         {
-            StoreUDecN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUDecN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE UDEC4::UDEC4(float _x, float _y, float _z, float _w) noexcept
@@ -3305,7 +3326,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UDEC4::UDEC4(const float* pArray) noexcept
         {
-            StoreUDec4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUDec4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE BYTEN4::BYTEN4(float _x, float _y, float _z, float _w) noexcept
@@ -3316,7 +3337,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE BYTEN4::BYTEN4(const float* pArray) noexcept
         {
-            StoreByteN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreByteN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE BYTE4::BYTE4(float _x, float _y, float _z, float _w) noexcept
@@ -3327,7 +3348,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE BYTE4::BYTE4(const float* pArray) noexcept
         {
-            StoreByte4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreByte4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE UBYTEN4::UBYTEN4(float _x, float _y, float _z, float _w) noexcept
@@ -3338,7 +3359,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UBYTEN4::UBYTEN4(const float* pArray) noexcept
         {
-            StoreUByteN4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUByteN4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE UBYTE4::UBYTE4(float _x, float _y, float _z, float _w) noexcept
@@ -3349,7 +3370,7 @@ namespace UltReality::Math
         _Use_decl_annotations_
         FORCE_INLINE UBYTE4::UBYTE4(const float* pArray) noexcept
         {
-            StoreUByte4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUByte4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
         FORCE_INLINE UNIBBLE4::UNIBBLE4(float _x, float _y, float _z, float _w) noexcept
@@ -3358,20 +3379,20 @@ namespace UltReality::Math
         }
 
         _Use_decl_annotations_
-        FORCE_INLINE UNIBBLE4:UNIBBLE4(const float* pArray) noexcept
+        FORCE_INLINE UNIBBLE4::UNIBBLE4(const float* pArray) noexcept
         {
-            StoreUNibble4(this, Vector::LoadFloat4(reinterpret_cast<const FLOAT4*>(pArray)));
+            StoreUNibble4(this, Vector::LoadFloat4(reinterpret_cast<const Float4*>(pArray)));
         }
 
-        FORCE_INLINE U555:U555(float _x, float _y, float _z, bool _w) noexcept
+        FORCE_INLINE U555::U555(float _x, float _y, float _z, bool _w) noexcept
         {
             StoreU555(this, Vector::Set(_x, _y, _z, ((_w) ? 1.0f : 0.0f)));
         }
 
         _Use_decl_annotations_
-        FORCE_INLINE U555:U555(const float* pArray, bool _w) noexcept
+        FORCE_INLINE U555::U555(const float* pArray, bool _w) noexcept
         {
-            VECTOR v = Vector::LoadFloat3(reinterpret_cast<const FLOAT3*>(pArray));
+            VECTOR v = Vector::LoadFloat3(reinterpret_cast<const Float3*>(pArray));
             StoreU555(this, Vector::SetW(v, ((_w) ? 1.0f : 0.0f)));
         }
     } // namespace PackedVector

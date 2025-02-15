@@ -23,9 +23,9 @@ namespace UltReality::Math
             return Vector4::NotEqual(Q1, Q2);
         }
 
-        FORCE_INLINE bool VEC_CALLCONV IsNaN(A_VECTOR Q1, A_VECTOR Q2) noexcept
+        FORCE_INLINE bool VEC_CALLCONV IsNaN(A_VECTOR q) noexcept
         {
-            return Vector4::IsNaN(Q1, Q2);
+            return Vector4::IsNaN(q);
         }
 
         FORCE_INLINE bool VEC_CALLCONV IsInfinite(A_VECTOR q) noexcept
@@ -163,7 +163,7 @@ namespace UltReality::Math
         {
             static const VECTOR_F32 oneMinusEpsilon = { { { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f } } };
 
-            VECTOR QW = Vector::SplatW(Q);
+            VECTOR QW = Vector::SplatW(q);
             VECTOR Q0 = Vector::Select(g_Select1110.v, q, g_Select1110.v);
 
             VECTOR controlW = Vector::InBounds(QW, oneMinusEpsilon.v);
@@ -186,11 +186,11 @@ namespace UltReality::Math
             VECTOR sineTheta, cosTheta;
             Vector::SineCos(&sineTheta, &cosTheta, theta);
 
-            VETOR s = Vector::Divide(sineTheta, theta);
+            VECTOR s = Vector::Divide(sineTheta, theta);
 
             VECTOR Result = Vector::Multiply(q, s);
 
-            cost VECTOR zero = Vector::Zero();
+            const VECTOR zero = Vector::Zero();
             VECTOR control = Vector::NearEqual(theta, zero, g_Epsilon.v);
             Result = Vector::Select(Result, q, control);
 
@@ -278,7 +278,7 @@ namespace UltReality::Math
             V01 = _mm_add_ps(g_IdentityR0, V01);
 
             VECTOR S0 = _mm_mul_ps(V01, omega);
-            S0 = Vector::Sin(S0);
+            S0 = Vector::Sine(S0);
             S0 = _mm_div_ps(S0, sineOmega);
 
             S0 = Vector::Select(V01, S0, control);
@@ -485,7 +485,7 @@ namespace UltReality::Math
             VECTOR halfAngles = Vector::Multiply(angles, g_OneHalf.v);
 
             VECTOR sineAngles, cosAngles;
-            Vector::SinCos(&sineAngles, &cosAngles, halfAngles);
+            Vector::SineCos(&sineAngles, &cosAngles, halfAngles);
 
             VECTOR P0 = Vector::Permute<PERMUTE_0X, PERMUTE_1X, PERMUTE_1X, PERMUTE_1X>(sineAngles, cosAngles);
             VECTOR Y0 = Vector::Permute<PERMUTE_1Y, PERMUTE_0Y, PERMUTE_1Y, PERMUTE_1Y>(sineAngles, cosAngles);
@@ -521,7 +521,7 @@ namespace UltReality::Math
             VECTOR scale = _mm_set_ps1(0.5f * angle);
             VECTOR vSine;
             VECTOR vCosine;
-            Vector::SinCos(&vSine, &vCosine, scale);
+            Vector::SineCos(&vSine, &vCosine, scale);
             scale = _mm_and_ps(vSine, g_Mask3);
             vCosine = _mm_and_ps(vCosine, g_MaskW);
             scale = _mm_or_ps(scale, vCosine);

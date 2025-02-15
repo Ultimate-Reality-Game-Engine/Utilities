@@ -155,7 +155,7 @@ namespace UltReality::Math
             vT = Vector::Divide(vT, vD);
 
             VECTOR point = Vector::Subtract(linePoint2, linePoint1);
-            point = Vector::MultiplyAdd(point, linePoint1);
+            point = Vector::MultiplyAdd(point, vT, linePoint1);
 
             const VECTOR zero = Vector::Zero();
             VECTOR control = Vector::NearEqual(vD, zero, g_Epsilon.v);

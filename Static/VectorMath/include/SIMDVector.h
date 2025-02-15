@@ -1,5 +1,5 @@
-#ifndef ULTREALITY_MATH_SIMD_VECTOR_CONFIG_H
-#define ULTREALITY_MATH_SIMD_VECTOR_CONFIG_H
+#ifndef ULTREALITY_MATH_SIMD_VECTOR_H
+#define ULTREALITY_MATH_SIMD_VECTOR_H
 
 #ifndef __cplusplus
 #error This library requires C++
@@ -141,7 +141,6 @@
 #pragma prefast(disable : 25000, "A_VECTOR is 16 bytes")
 #endif
 
-#include <VectorMathConstants.h>
 #include <Constants.h>
 
 namespace UltReality::Math
@@ -179,14 +178,14 @@ namespace UltReality::Math
 
 #if _VECTORCALL_ && !defined(_NO_INTRINSICS_)
     // Define alias to be used for 5th & 6th vector type arguments. Passes in register for vector call convention; by reference otherwise
-	typedef VECTOR C_VECTOR;
+	typedef const VECTOR C_VECTOR;
 #else
     // Define alias to be used for 5th & 6th vector type arguments. Passes in register for vector call convention; by reference otherwise
-	typedef VECTOR& C_VECTOR;
+	typedef const VECTOR& C_VECTOR;
 #endif
 
 	// Define alias to be used for 7th+ vector type arguments. Passed by reference
-	typedef VECTOR& D_VECTOR;
+	typedef const VECTOR& D_VECTOR;
 
 	ALIGNED_STRUCT(16) VECTOR_F32
 	{
@@ -858,6 +857,76 @@ namespace UltReality::Math
         VECTOR VEC_CALLCONV BaryCentricV(A_VECTOR position1, A_VECTOR postion2, A_VECTOR postion3, B_VECTOR VF, C_VECTOR VG) noexcept;
 	}
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4005 4668)
+    // C4005/4668: Old header issue
+#endif
+#include <stdint.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+    constexpr uint32_t SELECT_NONE = 0x00000000;
+    constexpr uint32_t SELECT_ALL = 0xFFFFFFFF;
+
+    constexpr uint32_t PERMUTE_0X = 0;
+    constexpr uint32_t PERMUTE_0Y = 1;
+    constexpr uint32_t PERMUTE_0Z = 2;
+    constexpr uint32_t PERMUTE_0W = 3;
+
+    constexpr uint32_t PERMUTE_1X = 4;
+    constexpr uint32_t PERMUTE_1Y = 5;
+    constexpr uint32_t PERMUTE_1Z = 6;
+    constexpr uint32_t PERMUTE_1W = 7;
+
+    constexpr uint32_t SWIZZLE_X = 0;
+    constexpr uint32_t SWIZZLE_Y = 1;
+    constexpr uint32_t SWIZZLE_Z = 2;
+    constexpr uint32_t SWIZZLE_W = 3;
+
+    constexpr uint32_t CRMASK_CR6 = 0x000000F0;
+    constexpr uint32_t CRMASK_CR6TRUE = 0x00000080;
+    constexpr uint32_t CRMASK_CR6FALSE = 0x00000020;
+    constexpr uint32_t CRMASK_CR6BOUNDS = CRMASK_CR6FALSE;
+
+    constexpr size_t CACHE_LINE_SIZE = 64;
+
+    constexpr bool CompareAllTrue(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6TRUE) == CRMASK_CR6TRUE;
+    }
+
+    constexpr bool CompareAnyTrue(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6FALSE) != CRMASK_CR6FALSE;
+    }
+
+    constexpr bool CompareAllFalse(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6FALSE) == CRMASK_CR6FALSE;
+    }
+
+    constexpr bool CompareAnyFalse(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6TRUE) != CRMASK_CR6TRUE;
+    }
+
+    constexpr bool CompareMixed(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6) == 0;
+    }
+
+    constexpr bool CompareAllInBounds(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6BOUNDS) == CRMASK_CR6BOUNDS;
+    }
+
+    constexpr bool CompareAnyInBounds(uint32_t cr) noexcept
+    {
+        return (cr & CRMASK_CR6BOUNDS) != CRMASK_CR6BOUNDS;
+    }
+
 	// The purpose of the following global constants is to prevent redundant
 	// reloading of the constants when they are referenced by more than one
 	// separate inline math routine called within the same function. Declaring
@@ -1018,6 +1087,6 @@ namespace UltReality::Math
     VEC_GLOBCONST VECTOR_F32 g_UShortMax = { { { 65535.0f, 65535.0f, 65535.0f, 65535.0f } } };
 }
 
-#include <SIMDVectorConfig.inl>
+#include <SIMDVector.inl>
 
-#endif // !ULTREALITY_MATH_SIMD_VECTOR_CONFIG_H
+#endif // !ULTREALITY_MATH_SIMD_VECTOR_H

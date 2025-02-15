@@ -14,7 +14,7 @@ TEST(RandomEngineTests, UIntInRange)
 	// Test many values to verify they are within the full range
 	for (int i = 0; i < 1000; i++)
 	{
-		uint32_t value = engine.RandomUInt();
+		uint32_t value = engine.UInt();
 
 		EXPECT_GE(value, 0U);
 		EXPECT_LE(value, UINT32_MAX);
@@ -29,7 +29,7 @@ TEST(RandomEngineTests, UIntWithRange)
 
 	for (int i = 0; i < 1000; i++)
 	{
-		uint32_t value = engine.RandomUInt(min, max);
+		uint32_t value = engine.UInt(min, max);
 
 		// Inclusive range check
 		EXPECT_GE(value, min);
@@ -44,7 +44,7 @@ TEST(RandomEngineTests, IntInRange)
 	// Test many values to verify they are within the full range
 	for (int i = 0; i < 1000; i++)
 	{
-		int32_t value = engine.RandomInt();
+		int32_t value = engine.Int();
 
 		EXPECT_GE(value, INT32_MIN);
 		EXPECT_LE(value, INT32_MAX);
@@ -59,7 +59,7 @@ TEST(RandomEngineTests, IntWithRange)
 
 	for (int i = 0; i < 1000; i++)
 	{
-		int32_t value = engine.RandomInt(min, max);
+		int32_t value = engine.Int(min, max);
 
 		// Inclusive range check
 		EXPECT_GE(value, min);
@@ -72,7 +72,7 @@ TEST(RandomEngineTests, FloatInRange) {
 	
 	for (int i = 0; i < 1000; i++)
 	{
-		float value = engine.RandomFloat();
+		float value = engine.Float();
 		EXPECT_GE(value, 0.0f);
 		// Since the float version is [min, max) the value should be strictly less than max.
 		EXPECT_LT(value, 1.0f);
@@ -85,7 +85,7 @@ TEST(RandomEngineTests, FloatWithRange) {
 	const float max = 2.0f;
 	for (int i = 0; i < 1000; i++)
 	{
-		float value = engine.RandomFloat(min, max);
+		float value = engine.Float(min, max);
 		EXPECT_GE(value, min);
 		// Since the float version is [min, max) the value should be strictly less than max.
 		EXPECT_LT(value, max);
@@ -97,7 +97,7 @@ TEST(RandomEngineTests, DoubleInRange) {
 
 	for (int i = 0; i < 1000; i++)
 	{
-		double value = engine.RandomDouble();
+		double value = engine.Double();
 		EXPECT_GE(value, 0.0);
 		// Since the double version is [min, max) the value should be strictly less than max.
 		EXPECT_LT(value, 1.0);
@@ -110,7 +110,7 @@ TEST(RandomEngineTests, DoubleWithRange) {
 	const double max = 2.0;
 	for (int i = 0; i < 1000; i++)
 	{
-		double value = engine.RandomDouble(min, max);
+		double value = engine.Double(min, max);
 		EXPECT_GE(value, min);
 		// Since the float version is [min, max) the value should be strictly less than max.
 		EXPECT_LT(value, max);

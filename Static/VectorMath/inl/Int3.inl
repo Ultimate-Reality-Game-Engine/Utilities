@@ -81,7 +81,7 @@ namespace UltReality::Math
 
 #elif defined(_SSE4_INTRINSICS_)
 			__m128 xy = _mm_castpd_ps(_mm_load_sd(reinterpret_cast<const double*>(pSource)));
-			__m128 z = _mm_load_ss(reinterpret_cast<const float*>(pSource->z));
+			__m128 z = _mm_load_ss(reinterpret_cast<const float*>(&pSource->z));
 			return _mm_insert_ps(xy, z, 0x20);
 
 #elif defined(_SSE2_INTRINSICS_)
@@ -112,7 +112,7 @@ namespace UltReality::Math
 
 #elif defined(_SSE4_INTRINSICS_)
 			__m128 xy = _mm_castpd_ps(_mm_load_sd(reinterpret_cast<const double*>(pSource)));
-			__m128 z = _mm_load_ss(reinterpret_cast<const float*>(pSource->z));
+			__m128 z = _mm_load_ss(reinterpret_cast<const float*>(&pSource->z));
 			return _mm_insert_ps(xy, z, 0x20);
 
 #elif defined(_SSE2_INTRINSICS_)

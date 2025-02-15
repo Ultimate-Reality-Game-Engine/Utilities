@@ -253,7 +253,7 @@ namespace UltReality::Math
 			VECTOR V4 = _mm_shuffle_ps(m.r[2], m.r[3], _MM_SHUFFLE(3, 2, 3, 2));
 
 			// x.x, y.x, z.x, w.x
-			VECTOR RO = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(2, 0, 2, 0));
+			VECTOR R0 = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(2, 0, 2, 0));
 			// x.y, y.y, z.y, w.y
 			VECTOR R1 = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(3, 1, 3, 1));
 			// x.z, y.z, z.z, w.z
@@ -300,7 +300,7 @@ namespace UltReality::Math
 			VECTOR V4 = _mm_shuffle_ps(m.r[2], m.r[3], _MM_SHUFFLE(3, 2, 3, 2));
 
 			// x.x, y.x, z.x, w.x
-			VECTOR RO = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(2, 0, 2, 0));
+			VECTOR R0 = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(2, 0, 2, 0));
 			// x.y, y.y, z.y, w.y
 			VECTOR R1 = _mm_shuffle_ps(V1, V2, _MM_SHUFFLE(3, 1, 3, 1));
 			// x.z, y.z, z.z, w.z

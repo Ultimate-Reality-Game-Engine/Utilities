@@ -1,11 +1,9 @@
 #ifndef ULTREALITY_MATH_COLLISION_H
 #define ULTREALITY_MATH_COLLISION_H
 
-#include <SIMDVectorConfig.h>
+#include <SIMDVector.h>
 #include <Miscellaneous.h>
-#include <MATRIX.h>
-#include <Float3.h>
-#include <Float4.h>
+#include <VectorTypes.h>
 
 namespace UltReality::Math
 {
@@ -111,7 +109,7 @@ namespace UltReality::Math
             static void CreateFromPoints(_Out_ BoundingSphere& out, _In_ size_t count,
                 _In_reads_bytes_(sizeof(Float3) + stride * (count - 1)) const Float3* pPoints, _In_ size_t stride) noexcept;
 
-            // Create sphere contianing frustum
+            // Create sphere containing frustum
             static void CreateFromFrustum(_Out_ BoundingSphere& out, _In_ const BoundingFrustum& fr) noexcept;
         };
 
@@ -388,6 +386,8 @@ namespace UltReality::Math
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+    } // namespace Collision
+} // namespace UltReality::Math
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -421,6 +421,5 @@ namespace UltReality::Math
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-    } // namespace Collision
-} // namespace UltReality::Math
+
 #endif // !ULTREALITY_MATH_COLLISION_H

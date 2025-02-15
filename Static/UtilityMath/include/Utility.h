@@ -87,6 +87,9 @@ namespace UltReality::Math
 	float ScalarCos(float value) noexcept;
 	float ScalarCosEst(float value) noexcept;
 
+	float ScalarTan(float value) noexcept;
+	float ScalarTanEst(float value) noexcept;
+
 	void ScalarSineCos(_Out_ float* pSine, _Out_ float* pCos, float value) noexcept;
 	void ScalarSineCosEst(_Out_ float* pSine, _Out_ float* pCos, float value) noexcept;
 
@@ -95,6 +98,9 @@ namespace UltReality::Math
 
 	float ScalarACos(float value) noexcept;
 	float ScalarACosEst(float value) noexcept;
+
+	float ScalarATan(float value) noexcept;
+	float ScalarATanEst(float value) noexcept;
 
 	constexpr float ConvertToRadians(float degrees) noexcept;
 	

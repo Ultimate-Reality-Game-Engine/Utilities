@@ -1,7 +1,7 @@
 #ifndef ULTREALITY_MATH_PACKED_VECTOR_H
 #define ULTREALITY_MATH_PACKED_VECTOR_H
 
-#include <SIMDVectorConfig.h>
+#include <SIMDVector.h>
 
 namespace UltReality::Math
 {
@@ -1188,6 +1188,8 @@ namespace UltReality::Math
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+    } // namespace PackedVector
+} // namespace UltReality::Math
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -1221,9 +1223,5 @@ namespace UltReality::Math
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-    } // namespace PackedVector
-    
-} // namespace UltReality::Math
-
 
 #endif // !ULTREALITY_MATH_PACKED_VECTOR_H
