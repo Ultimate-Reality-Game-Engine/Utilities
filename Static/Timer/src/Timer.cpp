@@ -1,46 +1,8 @@
-
-
-#include <GameTimer.h>
+#include <Timer.h>
 
 namespace UltReality::Utilities
 {
-	GameTimer* GameTimer::GetInstance() noexcept
-	{
-		// Acquire a concurrent read lock (shared) for read access
-		std::shared_lock<std::shared_mutex> readLock(s_sharedMutex);
-
-		if (!GameTimer::s_instance)
-		{
-			// Release the read lock to prevent a deadlock as both read and write use the same mutex
-			readLock.unlock();
-
-			// Acquire an exclusive lock for write access
-			std::unique_lock<std::shared_mutex> writeLock(s_sharedMutex);
-
-			if (!GameTimer::s_instance)
-			{
-				// Create the instance
-				GameTimer::s_instance = new GameTimer();
-			}
-		}
-
-		// Return the instance pointer
-		return GameTimer::s_instance;
-	}
-
-	void GameTimer::DestroyInstance() noexcept
-	{
-		// Acquire exclusive lock
-		std::unique_lock<std::shared_mutex> writeLock(s_sharedMutex);
-
-		if (s_instance)
-		{
-			delete s_instance;
-			s_instance = nullptr;
-		}
-	}
-
-	double GameTimer::GetTotalTime() const noexcept
+	double Timer::GetTotalTime() const noexcept
 	{
 		if (!m_stopped)
 		{
@@ -52,7 +14,7 @@ namespace UltReality::Utilities
 		}
 	}
 
-	double GameTimer::GetGameTime() const noexcept
+	double Timer::GetGameTime() const noexcept
 	{
 		using namespace std::chrono;
 
@@ -71,12 +33,12 @@ namespace UltReality::Utilities
 		}
 	}
 
-	double GameTimer::GetDeltaTime() const noexcept
+	double Timer::GetDeltaTime() const noexcept
 	{
 		return m_deltaTime;
 	}
 
-	void GameTimer::Initialize() noexcept
+	void Timer::Initialize() noexcept
 	{
 		auto now = std::chrono::high_resolution_clock::now();
 		m_baseTime = now;
@@ -85,7 +47,7 @@ namespace UltReality::Utilities
 		m_stopped = false;
 	}
 
-	void GameTimer::Start() noexcept
+	void Timer::Start() noexcept
 	{
 		// Accumulate the time elapsed between stop and start pairs if we are not paused
 		if (m_stopped)
@@ -98,7 +60,7 @@ namespace UltReality::Utilities
 		}
 	}
 
-	void GameTimer::Stop() noexcept
+	void Timer::Stop() noexcept
 	{
 		// Pause the timer
 		if (!m_stopped)
@@ -108,7 +70,7 @@ namespace UltReality::Utilities
 		}
 	}
 
-	void GameTimer::Tick() noexcept
+	void Timer::Tick() noexcept
 	{
 		if (m_stopped)
 		{
