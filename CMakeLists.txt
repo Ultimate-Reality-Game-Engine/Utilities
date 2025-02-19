@@ -94,6 +94,23 @@ add_subdirectory(Static)
 # End Add Sub-Directories *************************************************************************
 #**************************************************************************************************
 
+# Target Creation *********************************************************************************
+#**************************************************************************************************
+
+# Create interface target Utilities
+add_library(Utilities INTERFACE)
+
+if(TARGET UtilitiesShared)
+	target_link_libraries(Utilities INTERFACE UtilitiesShared)
+endif()
+
+if(TARGET UtilitiesStatic)
+	target_link_libraries(Utilities INTERFACE UtilitiesStatic)
+endif()
+
+# End Target Creation *****************************************************************************
+#**************************************************************************************************
+
 # Create Unit Test Groups *************************************************************************
 #**************************************************************************************************
 if(UTILITIES_BUILD_TESTS)
