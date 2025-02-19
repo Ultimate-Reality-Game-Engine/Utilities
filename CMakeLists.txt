@@ -111,6 +111,25 @@ endif()
 # End Target Creation *****************************************************************************
 #**************************************************************************************************
 
+# A version that is often used to denote a specific build of the software, including revisions, builds, or other metadata
+set(PACKAGE_VERSION_BUILD "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
+
+set(PACKAGE_VERSION "${PROJECT_VERSION}-${PACKAGE_VERSION_BUILD}")
+
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/out/package")
+
+set(CPACK_PACKAGE_NAME "Utilities")
+set(CPACK_PACKAGE_VERSION "${PACKAGE_VERSION}")
+
+set(CPACK_PACKAGE_VENDOR "Andrew Todd")
+set(CPACK_PACKAGE_CONTACT "andrewdanieltodd@gmail.com")
+include(CPack)
+
+if(UTILITIES_STATIC_VERBOSE)
+	message(STATUS "PACKAGE_VERSION is: ${PACKAGE_VERSION}")
+	message(STATUS "PACKAGE_FILE_NAME is: ${CPACK_PACKAGE_FILE_NAME}")
+endif()
+
 # Create Unit Test Groups *************************************************************************
 #**************************************************************************************************
 if(UTILITIES_BUILD_TESTS)
