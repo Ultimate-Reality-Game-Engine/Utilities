@@ -16,6 +16,7 @@
 #include <type_traits>
 #include <functional>
 #include <typeindex>
+#include <future>
 
 #include <EventBase_t.h>
 
@@ -638,7 +639,7 @@ namespace UltReality::Utilities
 			{
 				const auto& event = m_eventQueue.front();
 				NotifySubscribers(event, m_listeners);
-				NotifySubscribers(event, m_syncListeners);
+				AsyncNotifySubscribers(event, m_syncListeners);
 				m_eventQueue.pop();
 			}
 
@@ -646,7 +647,7 @@ namespace UltReality::Utilities
 			{
 				const auto& event = m_syncEventQueue.front();
 				NotifySubscribers(event, m_listeners);
-				NotifySubscribers(event, m_syncListeners);
+				AsyncNotifySubscribers(event, m_syncListeners);
 				m_syncEventQueue.pop();
 			}
 		}
@@ -663,13 +664,15 @@ namespace UltReality::Utilities
 			{
 				const auto& event = m_eventQueue.front();
 				NotifySubscribers(event, m_listeners);
+				AsyncNotifySubscribers(event, m_syncListeners);
 				m_eventQueue.pop();
 			}
 
 			while (!m_syncEventQueue.empty())
 			{
 				const auto& event = m_syncEventQueue.front();
-				NotifySubscribers(event, m_syncListeners);
+				NotifySubscribers(event, m_listeners);
+				AsyncNotifySubscribers(event, m_syncListeners);
 				m_syncEventQueue.pop();
 			}
 		}
@@ -688,6 +691,21 @@ namespace UltReality::Utilities
 				for (const auto& callback : it->second)
 				{
 					callback.second->operator()(*event);
+				}
+			}
+		}
+
+		FORCE_INLINE void AsyncNotifySubscribers(const std::shared_ptr<EventTypeBase>& event,
+			const std::unordered_map<EnumType, std::unordered_map<size_t, std::shared_ptr<IDelegate>>>& listeners)
+		{
+			auto it = listeners.find(event->type);
+			if (it != listeners.end())
+			{
+				for (const auto& callbackPair : it->second)
+				{
+					std::async(std::launch::async, [callback = callbackPair.second, event]() {
+						(*callback)(*event);
+					});
 				}
 			}
 		}
