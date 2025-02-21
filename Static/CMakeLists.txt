@@ -81,7 +81,7 @@ install(
 install(
 	EXPORT UtilitiesStatic_Targets 
 	FILE UtilitiesStatic_Targets.cmake 
-	NAMESPACE UltReality:: 
+	NAMESPACE UltReality::Utilities 
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesStatic
 )
 

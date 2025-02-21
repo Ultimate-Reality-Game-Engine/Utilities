@@ -92,7 +92,7 @@ if(UTILITIES_SHARED_BUILD)
 		install(
 			EXPORT UtilitiesShared_Targets 
 			FILE UtilitiesShared_Targets.cmake 
-			NAMESPACE UltReality:: 
+			NAMESPACE UltReality::Utilities 
 			DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/UtilitiesShared
 		)
 
