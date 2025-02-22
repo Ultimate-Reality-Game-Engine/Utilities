@@ -202,7 +202,7 @@ namespace UltReality::Utilities
 		&& !std::is_function_v<std::remove_pointer_t<std::decay_t<Callable>>>
 		&& !std::is_rvalue_reference_v<Callable>)
 		void SyncUnsubscribe(const Callable& callable, Events... eventTypes);
-	}
+	};
 }
 
 #include <EventSource_t.inl>
