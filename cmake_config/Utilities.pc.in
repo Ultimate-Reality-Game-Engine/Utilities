@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@LIBDIR_FOR_PKG_CONFIG@
+includedir=@INCLUDEDIR_FOR_PKG_CONFIG@
+
+Name: @PROJECT_NAME@
+Description: Collection of Utilities for the Ultimate Reality Game engine
+URL: https://github.com/Ultimate-Reality-Game-Engine/Utilities
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}
+Libs: -lUtilities

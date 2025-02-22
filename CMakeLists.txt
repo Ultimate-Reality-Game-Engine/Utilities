@@ -111,6 +111,67 @@ endif()
 # End Target Creation *****************************************************************************
 #**************************************************************************************************
 
+# Target Installation *****************************************************************************
+#**************************************************************************************************
+
+# Install the targets
+install(
+	TARGETS Utilities 
+	EXPORT Utilities_Targets 
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # Static libraries/import libraries (.lib files for .dll linking) 
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # Shared libraries (.so) 
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # .exe or .dll 
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PUBLIC 
+	PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # Headers/include directories marked as PRIVATE
+)
+
+# Create the targets CMake file which contains the above definitions
+install(
+	EXPORT Utilities_Targets 
+	FILE Utilities_Targets.cmake 
+	NAMESPACE UltReality::Utilities 
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/Utilities
+)
+
+# Generate and install the package version config files
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+	"Utilities_ConfigVersion.cmake" 
+	VERSION ${PROJECT_VERSION} 
+	COMPATIBILITY SameMajorVersion
+)
+configure_package_config_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities_Config.cmake.in" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Config.cmake" 
+	INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/Utilities
+)
+
+# Install the CMake config files
+install(
+	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities_ConfigVersion.cmake" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities_Config.cmake" 
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/Utilities
+)
+
+# Define Package install paths
+set(INCLUDEDIR_FOR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+set(LIBDIR_PKG_CONFIG "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
+# Create and install the package config file
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake_config/Utilities.pc.in" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Utilities.pc" @ONLY
+)
+
+# Install the package config file
+install(
+	FILES "${CMAKE_CURRENT_BINARY_DIR}/Utilities.pc" 
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+# End Target Installation *************************************************************************
+#**************************************************************************************************
+
 # A version that is often used to denote a specific build of the software, including revisions, builds, or other metadata
 set(PACKAGE_VERSION_BUILD "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}")
 
