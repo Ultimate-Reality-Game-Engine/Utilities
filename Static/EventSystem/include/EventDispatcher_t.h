@@ -1,5 +1,5 @@
-#ifndef ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
-#define ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
+#ifndef ULTREALITY_UTILITIES_EVENT_DISPATCHER_T_H
+#define ULTREALITY_UTILITIES_EVENT_DISPATCHER_T_H
 
 #pragma push_macro("min")
 #pragma push_macro("max")
@@ -113,7 +113,7 @@ namespace UltReality::Utilities
 	/// </summary>
 	/// <typeparam name="...Events">A variadic template parameter pack of types that satisfy the <seealso cref="UltReality.Utilities.CEventType"/> concept. These are the event that manager supports</typeparam>
 	template <CEventDispatcherCompatible EventTypeBase>
-	class EventDispatcher
+	class EventDispatcher_t
 	{
 	public:
 		using EnumType = typename EventTypeBase::EnumType;
@@ -281,7 +281,7 @@ namespace UltReality::Utilities
 		mutable std::mutex m_listenerMutex;
 
 	public:
-		EventDispatcher(size_t batchSize = 60) : m_batchSize(batchSize)
+		EventDispatcher_t(size_t batchSize = 60) : m_batchSize(batchSize)
 		{}
 
 		/// <summary>
@@ -744,4 +744,4 @@ namespace UltReality::Utilities
 }
 #pragma pop_macro("min")
 #pragma pop_macro("max")
-#endif // !ULTREALITY_UTILITIES_EVENT_DISPATCHER_H
+#endif // !ULTREALITY_UTILITIES_EVENT_DISPATCHER_T_H

@@ -1,14 +1,127 @@
 #include <gtest/gtest.h>
 
-#include <EventDispatcher.h>
-#include <PlatformMessageHandler.h>
+#include <EventDispatcher_t.h>
 
 using namespace UltReality::Utilities;
+
+enum class PlatformEvents
+{
+    EWindowActivate, // Triggered when the window is activated or deactivated
+    EWindowResize, // Triggered when the user resizes the window
+    EWindowEnterSizeMove, // Triggered when the user grabs the resize bars
+    EWindowExitSizeMove, // Triggered when the user releases the resize bars
+    EWindowClose, // Triggered when a close request is sent
+    EWindowDestroy, // Triggered when the window is being destroyed
+    EQuit, // Triggered when the application is terminating
+    EWindowFocusGained, // Triggered when the window gains focus
+    EWindowFocusLost, // Triggered when the window looses focus
+    EWindowGetMinMaxInfo, // Triggered to provide size of window
+    EMouseLDown, // Triggered when left mouse button pressed
+    EMouseLUp, // Triggered when left mouse button released
+    EMouseLDClick, // Triggered when left mouse button is double clicked
+    EMouseMDown, // Triggered when middle mouse button pressed
+    EMouseMUp, // Triggered when middle mouse button released
+    EMouseMDClick, // Triggered when middle mouse button double clicked
+    EMouseRDown, // Triggered when right mouse button pressed
+    EMouseRUp, // Triggered when right mouse button released
+    EMouseRDClick, // Triggered when right mouse button double clicked
+    EMouseXDClick, // Triggered when one of the X buttons on the mouse is double clicked
+    EMouseXDown, // Triggered when one of the X buttons on the mouse is pressed
+    EMouseXUp, // Triggered when one of the X buttons on the mouse is released
+    EMouseHover, // Triggered when the cursor hovers over the client area of the window
+    EMouseLeave, // Triggered when the cursor leaves the client area of the window
+    EMouseMove, // Triggered when the mouse moved
+    EMouseWheel, // Triggered when the mouse wheel is rotated
+    EKeyDown, // Triggered when keyboard key pressed
+    EKeyUp, // Triggered when keyboard key released
+    ESysKeyDown, // Triggered when user presses F10 or holds down the ALT key and presses another key
+    ESysKeyUp // Triggered when the user releases a key that was pressed while the ALT key was held down
+};
+
+/// <summary>
+/// Base event for the platform level
+/// </summary>
+struct PlatformMessageEvent : public EventBase_t<PlatformEvents>
+{
+    using EventBase_t::EventBase_t; // Inherit constructors
+};
+
+struct EWindowResize : public PlatformMessageEvent
+{
+    enum class SizeDetails
+    {
+#if defined(_WIN_TARGET)
+        MaxHide,
+        Maximized,
+        MaxShow,
+        Minimized,
+        Restored
+#elif defined(_LINUX_TARGET)
+        MaxHide,
+        Maximized,
+        MaxShow,
+        Minimized,
+        Restored
+#endif
+    };
+
+    uint16_t width; // The width of the window after the resize
+    uint16_t height; // The height of the window after the resize
+
+    SizeDetails details;
+
+    EWindowResize(uint16_t w, uint16_t h, SizeDetails d) : PlatformMessageEvent(PlatformEvents::EWindowResize), width(w), height(h), details(d) {}
+};
+
+enum class Key
+{
+    CTRL
+};
+
+struct EKeyDown : public PlatformMessageEvent
+{
+    Key key;
+
+    EKeyDown(Key k) : PlatformMessageEvent(PlatformEvents::EKeyDown), key(k) {}
+};
+
+struct Mouse
+{
+    enum class CompoundKeys
+    {
+        Control,
+        LButton,
+        MButton,
+        RButton,
+        Shift,
+        XButton1,
+        XButton2,
+        None
+    };
+
+    enum class XButton
+    {
+        XButton1,
+        XButton2
+    };
+
+    CompoundKeys compKey;
+
+    uint16_t mouseX;
+    uint16_t mouseY;
+
+    Mouse(CompoundKeys k, uint16_t x, uint16_t y) : compKey(k), mouseX(x), mouseY(y) {}
+};
+
+struct EMouseMove : public PlatformMessageEvent, Mouse
+{
+    EMouseMove(CompoundKeys k, uint16_t x, uint16_t y) : PlatformMessageEvent(PlatformEvents::EMouseMove), Mouse(k, x, y) {}
+};
 
 class EventDispatcherTest : public ::testing::Test
 {
 protected:
-	EventDispatcher<PlatformMessageEvent> dispatcher;
+	EventDispatcher_t<PlatformMessageEvent> dispatcher;
 
     bool wasMemberFunctionCalled1 = false;
     bool wasMemberFunctionCalled2 = false;
