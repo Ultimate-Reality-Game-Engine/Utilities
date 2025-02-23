@@ -19,6 +19,22 @@ namespace UltReality::Utilities
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
+	template<typename EventType>
+	requires (CDerivedEvent<EventTypeBase, EventType> || ...)
+	FORCE_INLINE void EventSource_t<EventTypeBase>::QueueEvent(const EventType& event)
+	{
+		GetDispatcher<EventType>().QueueEvent(event);
+	}
+
+	template <CEventDispatcherCompatible EventTypeBase>
+	template<typename EventType>
+	requires (CDerivedEvent<EventTypeBase, EventType> || ...)
+	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncQueueEvent(const EventType& event)
+	{
+		GetDispatcher<EventType>().SyncQueueEvent(event);
+	}
+
+	template <CEventDispatcherCompatible EventTypeBase>
 	template<typename EventType, typename... Events>
 	requires (std::is_same_v<EnumType, Events> && ...)
 	&& CDerivedEvent<EventTypeBase, EventType>

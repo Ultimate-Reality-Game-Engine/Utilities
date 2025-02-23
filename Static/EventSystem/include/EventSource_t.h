@@ -21,6 +21,24 @@ namespace UltReality::Utilities
 
 	public:
 		/// <summary>
+		/// Call to add an event to the queue for the manager to dispatch to subscribers
+		/// Not thread safe. Only call from same thread in series
+		/// </summary>
+		/// <param name="event">An instance of a supported event type</param>
+		template<typename EventType>
+		requires (CDerivedEvent<EventTypeBase, EventType> || ...)
+		void QueueEvent(const EventType& event);
+
+		/// <summary>
+		/// Call to add an event to the queue for the manager to dispatch to subscribers
+		/// Thread safe. Can be called from concurrent threads
+		/// </summary>
+		/// <param name="event">An instance of a supported event type</param>
+		template<typename EventType>
+		requires (CDerivedEvent<EventTypeBase, EventType> || ...)
+		void SyncQueueEvent(const EventType& event);
+
+		/// <summary>
 		/// Call to subscribe a free function listener for one or many supported event types
 		/// Not thread safe. Only call from same thread in series
 		/// </summary>
