@@ -13,7 +13,7 @@ namespace UltReality::Utilities
 {
 	template <CEventDispatcherCompatible EventTypeBase>
 	template<typename EventType>
-	auto& EventSource_t<EventTypeBase>::GetDispatcher()
+	FORCE_INLINE auto& EventSource_t<EventTypeBase>::GetDispatcher()
 	{
 		return std::get<EventDispatcher_t<EventType>>(m_eventDispatchers);
 	}
