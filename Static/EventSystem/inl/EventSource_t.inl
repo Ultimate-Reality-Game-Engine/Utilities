@@ -12,12 +12,19 @@
 namespace UltReality::Utilities
 {
 	template <CEventDispatcherCompatible EventTypeBase>
+	template<typename EventType>
+	auto& EventSource_t<EventTypeBase>::GetDispatcher()
+	{
+		return std::get<EventDispatcher_t<EventType>>(m_eventDispatchers);
+	}
+
+	template <CEventDispatcherCompatible EventTypeBase>
 	template<typename EventType, typename... Events>
 	requires (std::is_same_v<EnumType, Events> && ...)
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Subscribe(void(*func)(const EventType&), Events... eventTypes)
 	{
-		m_eventDispatcher.Subscribe(func, eventTypes...);
+		GetDispatcher<EventType>().Subscribe(func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -26,7 +33,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Unsubscribe(void(*func)(const EventType&), Events... eventTypes)
 	{
-		m_eventDispatcher.Unsubscribe(func, eventTypes...);
+		GetDispatcher<EventType>().Unsubscribe(func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -35,7 +42,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Subscribe(T* instance, void(T::* func)(const EventType&), Events... eventTypes)
 	{
-		m_eventDispatcher.Subscribe(instance, func, eventTypes...);
+		GetDispatcher<EventType>().Subscribe(instance, func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -44,7 +51,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Unsubscribe(T* instance, void(T::* func)(const EventType&), Events... eventTypes)
 	{
-		m_eventDispatcher.Unsubscribe(instance, func, eventTypes...);
+		GetDispatcher<EventType>().Unsubscribe(instance, func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -54,7 +61,7 @@ namespace UltReality::Utilities
 	&& !std::is_lvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Subscribe(Callable&& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.Subscribe(std::forward<Callable>(callable), eventTypes...);
+		GetDispatcher<EventType>().Subscribe(std::forward<Callable>(callable), eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -64,7 +71,7 @@ namespace UltReality::Utilities
 	&& !std::is_rvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Subscribe(const Callable& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.Subscribe(callable, eventTypes...);
+		GetDispatcher<EventType>().Subscribe(callable, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -74,7 +81,7 @@ namespace UltReality::Utilities
 	&& !std::is_lvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Unsubscribe(Callable&& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.Unsubscribe(std::forward<Callable>(callable), eventTypes...);
+		GetDispatcher<EventType>().Unsubscribe(std::forward<Callable>(callable), eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -84,7 +91,7 @@ namespace UltReality::Utilities
 	&& !std::is_rvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::Unsubscribe(const Callable& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.Unsubscribe(callable, eventTypes...);
+		GetDispatcher<EventType>().Unsubscribe(callable, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -93,7 +100,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncSubscribe(void(*func)(const EventType& event), Events... eventTypes)
 	{
-		m_eventDispatcher.SyncSubscribe(func, eventTypes...);
+		GetDispatcher<EventType>().SyncSubscribe(func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -102,7 +109,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncUnsubscribe(void(*func)(const EventType& event), Events... eventTypes)
 	{
-		m_eventDispatcher.SyncUnsubscribe(func, eventTypes...);
+		GetDispatcher<EventType>().SyncUnsubscribe(func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -111,7 +118,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncSubscribe(T* instance, void(T::* func)(const EventType& event), Events... eventTypes)
 	{
-		m_eventDispatcher.SyncSubscribe(instance, func, eventTypes...);
+		GetDispatcher<EventType>().SyncSubscribe(instance, func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -120,7 +127,7 @@ namespace UltReality::Utilities
 	&& CDerivedEvent<EventTypeBase, EventType>
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncUnsubscribe(T* instance, void(T::* func)(const EventType& event), Events... eventTypes)
 	{
-		m_eventDispatcher.SyncUnsubscribe(instance, func, eventTypes...);
+		GetDispatcher<EventType>().SyncUnsubscribe(instance, func, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -130,7 +137,7 @@ namespace UltReality::Utilities
 	&& !std::is_lvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncSubscribe(Callable&& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.SyncSubscribe(std::forward<Callable>(callable), eventTypes...);
+		GetDispatcher<EventType>().SyncSubscribe(std::forward<Callable>(callable), eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -140,7 +147,7 @@ namespace UltReality::Utilities
 	&& !std::is_rvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncSubscribe(const Callable& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.SyncSubscribe(callable, eventTypes...);
+		GetDispatcher<EventType>().SyncSubscribe(callable, eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -150,7 +157,7 @@ namespace UltReality::Utilities
 	&& !std::is_lvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncUnsubscribe(Callable&& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.SyncUnsubscribe(std::forward<Callable>(callable), eventTypes...);
+		GetDispatcher<EventType>().SyncUnsubscribe(std::forward<Callable>(callable), eventTypes...);
 	}
 
 	template <CEventDispatcherCompatible EventTypeBase>
@@ -160,7 +167,7 @@ namespace UltReality::Utilities
 	&& !std::is_rvalue_reference_v<Callable>)
 	FORCE_INLINE void EventSource_t<EventTypeBase>::SyncUnsubscribe(const Callable& callable, Events... eventTypes)
 	{
-		m_eventDispatcher.SyncUnsubscribe(callable, eventTypes...);
+		GetDispatcher<EventType>().SyncUnsubscribe(callable, eventTypes...);
 	}
 }
 

@@ -1,18 +1,23 @@
 #ifndef ULTREALITY_UTILITIES_EVENT_SOURCE_T_H
 #define ULTREALITY_UTILITIES_EVENT_SOURCE_T_H
 
+#include <tuple>
+
 #include <EventDispatcher_t.h>
 
 namespace UltReality::Utilities
 {
-	template <CEventDispatcherCompatible EventTypeBase>
+	template <CEventDispatcherCompatible... EventTypeBase>
 	class EventSource_t
 	{
 	protected:
 		/// <summary>
-		/// Encapsulated event dispatcher
+		/// Encapsulated event dispatchers
 		/// </summary>
-		EventDispatcher_t<EventTypeBase> m_eventDispatcher;
+		std::tuple<EventDispatcher_t<EventTypeBase>...> m_eventDispatchers;
+
+		template<typename EventType>
+		auto& GetDispatcher();
 
 	public:
 		/// <summary>
