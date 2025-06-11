@@ -1209,15 +1209,15 @@ namespace UltReality::Math
 					__m128 V = _mm_loadu_ps(reinterpret_cast<const float*>(pInputVector));
 					pInputVector += inputStride;
 
-					VECTOR vTempX = PERMUTE_PS(v, _MM_SHUFFLE(0, 0, 0, 0));
-					VECTOR vTempY = PERMUTE_PS(v, _MM_SHUFFLE(1, 1, 1, 1));
-					VECTOR vTempZ = PERMUTE_PS(v, _MM_SHUFFLE(2, 2, 2, 2));
-					VECTOR vTempW = PERMUTE_PS(v, _MM_SHUFFLE(3, 3, 3, 3));
+					VECTOR vTempX = PERMUTE_PS(V, _MM_SHUFFLE(0, 0, 0, 0));
+					VECTOR vTempY = PERMUTE_PS(V, _MM_SHUFFLE(1, 1, 1, 1));
+					VECTOR vTempZ = PERMUTE_PS(V, _MM_SHUFFLE(2, 2, 2, 2));
+					VECTOR vTempW = PERMUTE_PS(V, _MM_SHUFFLE(3, 3, 3, 3));
 
 					vTempX = _mm_mul_ps(vTempX, row0);
 					vTempY = _mm_mul_ps(vTempY, row1);
-					vTempZ = XM_FMADD_PS(vTempZ, row2, vTempX);
-					vTempW = XM_FMADD_PS(vTempW, row3, vTempY);
+					vTempZ = FMADD_PS(vTempZ, row2, vTempX);
+					vTempW = FMADD_PS(vTempW, row3, vTempY);
 					vTempX = _mm_add_ps(vTempZ, vTempW);
 
 					_mm_storeu_ps(reinterpret_cast<float*>(pOutputVector), vTempX);
