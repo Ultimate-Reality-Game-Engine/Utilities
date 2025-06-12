@@ -142,7 +142,7 @@ namespace UltReality::Math
 		float operator() (size_t row, size_t column) const noexcept { return m[row][column]; }
 		float& operator() (size_t row, size_t column) noexcept { return m[row][column]; }
 
-		const float* operator[]size_t row) const noexcept { return m[row]; }
+		const float* operator[](size_t row) const noexcept { return m[row]; }
 		float* operator[](size_t row) noexcept { return m[row]; }
 #endif
 
