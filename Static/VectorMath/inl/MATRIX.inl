@@ -722,10 +722,10 @@ namespace UltReality::Math
 			P.r[3] = Vector::MergeZW(m.r[1], m.r[3]); // m12m32m13m33
 
 			MATRIX MT;
-			MT.r[0] = VectorMergeXY(P.r[0], P.r[1]); // m00m10m20m30
-			MT.r[1] = VectorMergeZW(P.r[0], P.r[1]); // m01m11m21m31
-			MT.r[2] = VectorMergeXY(P.r[2], P.r[3]); // m02m12m22m32
-			MT.r[3] = VectorMergeZW(P.r[2], P.r[3]); // m03m13m23m33
+			MT.r[0] = Vector::MergeXY(P.r[0], P.r[1]); // m00m10m20m30
+			MT.r[1] = Vector::MergeZW(P.r[0], P.r[1]); // m01m11m21m31
+			MT.r[2] = Vector::MergeXY(P.r[2], P.r[3]); // m02m12m22m32
+			MT.r[3] = Vector::MergeZW(P.r[2], P.r[3]); // m03m13m23m33
 			
 			return MT;
 
