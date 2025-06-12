@@ -89,7 +89,7 @@ namespace UltReality::Math
             vDot = _mm_rsqrt_ps(vDot);
             
             // Get the reciprocal
-            return _mm_mul_ps(vDot, P);
+            return _mm_mul_ps(vDot, p);
 #endif
         }
 
