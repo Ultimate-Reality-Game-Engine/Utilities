@@ -810,7 +810,7 @@ namespace UltReality::Math
 
 #elif defined(_SSE2_INTRINSICS_)
 			// Perform the dot product on x,y,z and w
-			VECTOR vLengthSq = _mm_mul_ps(V, V);
+			VECTOR vLengthSq = _mm_mul_ps(v, v);
 			// vTemp has z and w
 			VECTOR vTemp = PERMUTE_PS(vLengthSq, _MM_SHUFFLE(3, 2, 3, 2));
 			// x+z, y+w
